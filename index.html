@@ -3,158 +3,226 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZetaChat Online</title>
+<title>ZetaChat - Invitación en esquina</title>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, deleteDoc, getDocs, where, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+// Config Firebase
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_STORAGE_BUCKET",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID",
+  measurementId: "TU_MEASUREMENT_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// DOM
+const usernameForm = document.getElementById("username-form");
+const usernameInput = document.getElementById("username-input");
+const chatContainer = document.getElementById("chat-container");
+const messageForm = document.getElementById("message-form");
+const messageInput = document.getElementById("message-input");
+const messageList = document.getElementById("message-list");
+const usersList = document.getElementById("users-list");
+const inviteBtn = document.getElementById("invite-btn");
+const invitePopup = document.getElementById("invite-popup");
+const inviteLink = document.getElementById("invite-link");
+const closeInviteBtn = document.getElementById("close-invite-btn");
+const closeRoomBtn = document.getElementById("close-room-btn");
+
+let username = "";
+let roomId = "";
+let avatar = { initials: "", color: "" };
+let userDocId = "";
+let isRoomOwner = false;
+
+// Sala por enlace
+const urlParams = new URLSearchParams(window.location.search);
+roomId = urlParams.get("room");
+if(!roomId){
+  roomId = Math.random().toString(36).substring(2,10);
+  isRoomOwner = true;
+}
+
+// Avatar aleatorio
+function generateAvatar() {
+  const colors = ["#f44336","#e91e63","#9c27b0","#3f51b5","#03a9f4","#4caf50","#ff9800"];
+  const initials = username.charAt(0).toUpperCase();
+  const color = colors[Math.floor(Math.random()*colors.length)];
+  return {initials, color};
+}
+
+// Login
+usernameForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  username = usernameInput.value.trim();
+  if(!username) return alert("Ingresa tu nombre de usuario");
+  document.getElementById("username-container").style.display = "none";
+  chatContainer.style.display = "grid";
+  avatar = generateAvatar();
+
+  const fullLink = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+  inviteLink.value = fullLink;
+
+  closeRoomBtn.style.display = isRoomOwner ? "inline-block" : "none";
+
+  // Registrar usuario
+  const usersRef = collection(db, "users");
+  const newUserDoc = doc(usersRef);
+  userDocId = newUserDoc.id;
+  await setDoc(newUserDoc, { username, avatar, roomId, lastActive: serverTimestamp() });
+
+  window.addEventListener("beforeunload", async () => {
+    await deleteDoc(doc(db, "users", userDocId));
+  });
+});
+
+// Enviar mensaje
+messageForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = messageInput.value.trim();
+  if(!text) return;
+  await addDoc(collection(db, "messages"), { username, avatar, roomId, text, createdAt: new Date() });
+  messageInput.value = "";
+});
+
+// Mensajes en tiempo real
+const qMessages = query(collection(db, "messages"), orderBy("createdAt"));
+onSnapshot(qMessages, (snapshot) => {
+  messageList.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const msg = docSnap.data();
+    if(msg.roomId !== roomId) return;
+    const div = document.createElement("div");
+    div.className = msg.username === username ? "message sent" : "message received";
+
+    const avatarDiv = document.createElement("div");
+    avatarDiv.className = "avatar";
+    avatarDiv.style.background = msg.avatar.color;
+    avatarDiv.textContent = msg.avatar.initials;
+    div.appendChild(avatarDiv);
+
+    const content = document.createElement("div");
+    content.className = "content";
+    const time = new Date(msg.createdAt.seconds ? msg.createdAt.seconds*1000 : msg.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    content.innerHTML = `<strong>${msg.username}</strong> <span class="time">${time}</span><br>${msg.text}`;
+    div.appendChild(content);
+
+    if(msg.username === username){
+      const btn = document.createElement("button");
+      btn.textContent = "Eliminar";
+      btn.onclick = async () => { await deleteDoc(doc(db, "messages", docSnap.id)); alert("Mensaje eliminado"); };
+      div.appendChild(btn);
+    }
+
+    messageList.appendChild(div);
+    messageList.scrollTop = messageList.scrollHeight;
+  });
+});
+
+// Usuarios conectados
+const qUsers = query(collection(db, "users"));
+onSnapshot(qUsers, (snapshot) => {
+  usersList.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const user = docSnap.data();
+    if(user.roomId === roomId){
+      const div = document.createElement("div");
+      div.className = "user";
+      div.innerHTML = `<div class="avatar" style="background:${user.avatar.color}">${user.avatar.initials}</div> <span>${user.username}</span>`;
+      usersList.appendChild(div);
+    }
+  });
+});
+
+// Cerrar sala
+closeRoomBtn.addEventListener("click", async () => {
+  if(!confirm("¿Cerrar sala y borrar todos los mensajes?")) return;
+  const msgsRef = collection(db, "messages");
+  const q = query(msgsRef, where("roomId", "==", roomId));
+  const snapshot = await getDocs(q);
+  snapshot.forEach(async docSnap => await deleteDoc(doc(db, "messages", docSnap.id)));
+  messageList.innerHTML = "";
+});
+
+// Botón invitar
+inviteBtn.addEventListener("click", () => {
+  invitePopup.style.display = invitePopup.style.display === "block" ? "none" : "block";
+});
+
+// Cerrar popup invitación
+closeInviteBtn.addEventListener("click", () => {
+  invitePopup.style.display = "none";
+});
+</script>
+
 <style>
-*{box-sizing:border-box;font-family:'Segoe UI',sans-serif;margin:0;padding:0;}
-body{height:100vh;display:flex;justify-content:center;align-items:center;background:#111;}
-#app{width:360px;height:640px;background:#000;border-radius:12px;color:white;display:flex;flex-direction:column;overflow:hidden;position:relative;}
-#login,#chat{flex:1;display:none;flex-direction:column;}
-#login.active,#chat.active{display:flex;}
-header{background:#075E54;padding:8px;font-weight:bold;text-align:center;font-size:0.9em;display:flex;justify-content:space-between;align-items:center;}
-#logoutBtn,#membersBtn{font-size:0.7em;cursor:pointer;background:#128C7E;border:none;border-radius:3px;padding:2px 4px;color:white;margin-left:2px;}
-#tabs{display:flex;justify-content:center;margin:6px 0;}
-.tab{flex:1;text-align:center;padding:6px 0;cursor:pointer;background:#222;color:#fff;border-radius:3px;margin:0 2px;}
-.tab.active{background:#25D366;color:#000;font-weight:bold;}
-#container{display:flex;flex:1;overflow:hidden;flex-direction:column-reverse;position:relative;}
-#membersList{display:none;position:absolute;top:45px;right:5px;background:#222;border-radius:3px;padding:4px;z-index:10;max-height:200px;overflow-y:auto;font-size:0.7em;}
-#membersList div{padding:2px 4px;display:flex;justify-content:space-between;align-items:center;margin:2px 0;background:#333;border-radius:3px;}
-#messages{flex:1;padding:6px;overflow-y:auto;display:flex;flex-direction:column-reverse;-webkit-overflow-scrolling:touch;}
-.msg{margin:2px 0;padding:8px 10px;border-radius:12px;max-width:75%;word-wrap:break-word;font-size:0.8em;font-weight:bold;display:flex;align-items:center;transition:all 0.3s ease;}
-.msg span.avatar{margin-right:5px;font-size:1em;}
-footer{display:flex;padding:6px;background:#222;}
-footer input{flex:1;padding:6px;border-radius:20px;border:none;font-size:0.8em;}
-footer button{margin-left:6px;border:none;border-radius:50%;width:32px;height:32px;background:#25D366;color:#fff;font-weight:bold;cursor:pointer;font-size:1em;}
-#invite{background:#128C7E;color:white;padding:4px 8px;border:none;border-radius:4px;cursor:pointer;margin:6px auto;font-size:0.8em;display:block;width:90%;}
+body { margin:0; font-family: Arial; background:#e5ddd5; }
+h2 { text-align:center; }
+form { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+input[type="text"] { padding:10px; border-radius:8px; border:none; }
+button { background:#34b7f1; border:none; padding:10px; border-radius:8px; color:white; cursor:pointer; }
+#chat-container { display:none; height:80vh; background:#fff; border-radius:10px; padding:10px; display:grid; grid-template-columns:150px 1fr; grid-gap:10px; position:relative; }
+#message-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
+#users-list { background:#f0f0f0; padding:5px; border-radius:8px; display:flex; flex-direction:column; gap:5px; }
+.user { display:flex; align-items:center; gap:5px; padding:2px; }
+.message { padding:5px; border-radius:10px; display:flex; align-items:flex-start; gap:10px; }
+.sent { background:#dcf8c6; align-self:flex-end; }
+.received { background:#f1f0f0; align-self:flex-start; }
+.avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; flex-shrink:0; }
+.content { max-width:70%; text-align:left; }
+.time { font-size:0.7em; color:#555; margin-left:5px; }
+#message-form { display:flex; gap:10px; grid-column:2; }
+#message-input { flex:1; padding:10px; border-radius:20px; border:1px solid #ccc; }
+#invite-btn { position:absolute; top:10px; right:10px; }
+#invite-popup { display:none; position:absolute; top:50px; right:10px; background:#fff; border:1px solid #ccc; padding:10px; border-radius:8px; z-index:10; width:200px; }
+#close-invite-btn { background:#f44336; padding:5px; margin-top:5px; width:100%; }
+#close-room-btn { background:#f44336; display:none; margin-top:5px; width:100%; }
+.message button { margin-left:10px; padding:2px 6px; background:#f44336; border:none; color:#fff; border-radius:5px; cursor:pointer; }
 </style>
 </head>
 <body>
 
-<div id="app">
-  <div id="login" class="active">
-    <header>ZetaChat</header>
-    <div id="tabs">
-      <div class="tab active" onclick="showTab('register')">Registrarse</div>
-      <div class="tab" onclick="showTab('loginForm')">Entrar</div>
-    </div>
-    <div id="register" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-      <input id="regUser" placeholder="Usuario" style="padding:6px;margin:4px;border:none;border-radius:4px;width:80%;font-size:0.8em;">
-      <input id="regAvatar" placeholder="😎" maxlength="2" style="padding:6px;margin:4px;border:none;border-radius:4px;width:80%;text-align:center;font-size:1em;">
-      <input id="regRoom" placeholder="Crear Sala" style="padding:6px;margin:4px;border:none;border-radius:4px;width:80%;font-size:0.8em;">
-      <button onclick="registerUser()" style="padding:6px 10px;margin-top:6px;border:none;border-radius:4px;background:#25D366;font-size:0.8em;">Registrar & Crear Sala</button>
-    </div>
-    <div id="loginForm" style="flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;">
-      <input id="logUser" placeholder="Usuario" style="padding:6px;margin:4px;border:none;border-radius:4px;width:80%;font-size:0.8em;">
-      <input id="logAvatar" placeholder="😎" maxlength="2" style="padding:6px;margin:4px;border:none;border-radius:4px;width:80%;text-align:center;font-size:1em;">
-      <input id="logRoom" placeholder="Sala" style="padding:6px;margin:4px;border:none;border-radius:4px;width:80%;font-size:0.8em;">
-      <button onclick="loginUser()" style="padding:6px 10px;margin-top:6px;border:none;border-radius:4px;background:#25D366;font-size:0.8em;">Entrar</button>
-    </div>
-  </div>
+<!-- Login -->
+<div id="username-container" class="container">
+  <h2>Bienvenido a ZetaChat</h2>
+  <form id="username-form">
+    <input type="text" id="username-input" placeholder="Ingresa tu nombre de usuario" required>
+    <button>Entrar al chat</button>
+  </form>
+</div>
 
-  <div id="chat">
-    <header>
-      <div>
-        <button id="membersBtn" onclick="toggleMembers()">Miembros</button>
-        <button id="logoutBtn" onclick="logout()">Salir</button>
-      </div>
-    </header>
-    <div id="container">
-      <div id="messages"></div>
-      <div id="membersList"></div>
+<!-- Chat -->
+<div id="chat-container">
+  <!-- Usuarios conectados -->
+  <div id="users-list"></div>
+
+  <!-- Chat principal -->
+  <div style="display:flex; flex-direction:column; height:100%;">
+    <h2>💬 Chat</h2>
+
+    <!-- Botón invitar -->
+    <button id="invite-btn">Invitar</button>
+    <div id="invite-popup">
+      <input type="text" id="invite-link" readonly>
+      <button onclick="navigator.clipboard.writeText(inviteLink.value)">Copiar enlace</button>
+      <button id="close-invite-btn">Cerrar ventana</button>
+      <button id="close-room-btn">Cerrar sala</button>
     </div>
-    <button id="invite" onclick="inviteFriend()">Invitar amigos</button>
-    <footer>
-      <input id="msgInput" placeholder="Escribe..." onkeydown="if(event.key==='Enter')sendMessage()" />
-      <button onclick="sendMessage()">➤</button>
-    </footer>
+
+    <div id="message-list"></div>
+    <form id="message-form">
+      <input type="text" id="message-input" placeholder="Escribe un mensaje..." required>
+      <button>Enviar</button>
+    </form>
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script>
-const firebaseConfig={apiKey:"AIzaSyBmb479LPMp_0CM5gpDj6mFzDAEoBGkOg8",authDomain:"zetachat-666a5.firebaseapp.com",databaseURL:"https://zetachat-666a5-default-rtdb.firebaseio.com",projectId:"zetachat-666a5",storageBucket:"zetachat-666a5.firebasestorage.app",messagingSenderId:"772092262393",appId:"1:772092262393:web:eb6266aa6cebcb3794ef28"};
-firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
-
-let username="", avatar="", room="";
-let userColors={};
-
-function showTab(tab){document.getElementById('register').style.display=tab==='register'?'flex':'none';document.getElementById('loginForm').style.display=tab==='loginForm'?'flex':'none';document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');}
-
-function registerUser(){
-  username=document.getElementById('regUser').value.trim();
-  avatar=document.getElementById('regAvatar').value.trim()||"🙂";
-  room=document.getElementById('regRoom').value.trim();
-  if(!username||!room) return alert("Completá usuario y sala.");
-  db.ref('salas/'+room+'/members/'+username).set({avatar:avatar});
-  enterChat();
-}
-
-function loginUser(){
-  username=document.getElementById('logUser').value.trim();
-  avatar=document.getElementById('logAvatar').value.trim()||"🙂";
-  room=document.getElementById('logRoom').value.trim();
-  if(!username||!room) return alert("Completá usuario y sala.");
-  db.ref('salas/'+room+'/members/'+username).set({avatar:avatar});
-  enterChat();
-}
-
-function enterChat(){
-  document.getElementById('login').classList.remove('active');
-  document.getElementById('chat').classList.add('active');
-  listenMessages();
-  listenMembers();
-}
-
-function sendMessage(){
-  const msg=document.getElementById('msgInput').value.trim();
-  if(msg==="") return;
-  db.ref('salas/'+room+'/messages').push().set({user:username,text:msg,avatar:avatar,time:Date.now()});
-  document.getElementById('msgInput').value="";
-}
-
-function listenMessages(){
-  const msgDiv=document.getElementById('messages');
-  db.ref('salas/'+room+'/messages').on('child_added',snap=>{
-    const data=snap.val();
-    if(!userColors[data.user]) userColors[data.user]=randomColor();
-    const div=document.createElement('div');
-    div.classList.add('msg');
-    div.style.background=userColors[data.user];
-    div.style.color='#000';
-    div.style.alignSelf=data.user===username?'flex-end':'flex-start';
-    const spanAvatar=document.createElement('span');
-    spanAvatar.classList.add('avatar'); spanAvatar.textContent=data.avatar||"🙂";
-    const spanText=document.createElement('span'); spanText.textContent=data.user+": "+data.text;
-    div.appendChild(spanAvatar); div.appendChild(spanText);
-    msgDiv.prepend(div);
-    msgDiv.scrollTop=0;
-  });
-}
-
-function listenMembers(){
-  const membersDiv=document.getElementById('membersList');
-  db.ref('salas/'+room+'/members').on('value',snap=>{
-    membersDiv.innerHTML="";
-    const members=snap.val()||{};
-    for(let member in members){
-      const div=document.createElement('div');
-      div.textContent=member;
-      if(member!==username){
-        const btn=document.createElement('button'); btn.textContent="❌"; btn.style.fontSize="0.6em";
-        btn.onclick=()=>db.ref('salas/'+room+'/members/'+member).remove();
-        div.appendChild(btn);
-      }
-      membersDiv.appendChild(div);
-    }
-  });
-}
-
-function toggleMembers(){const m=document.getElementById('membersList'); m.style.display=m.style.display==='block'?'none':'block';}
-function inviteFriend(){const link=window.location.origin+window.location.pathname+"?room="+encodeURIComponent(room); prompt("Copiá este enlace y compartilo:",link);}
-function logout(){db.ref('salas/'+room+'/members/'+username).remove(); username=""; avatar=""; room=""; userColors={}; document.getElementById('login').classList.add('active'); document.getElementById('chat').classList.remove('active'); document.getElementById('msgInput').value=""; document.getElementById('messages').innerHTML=""; document.getElementById('membersList').innerHTML="";}
-function randomColor(){const r=Math.floor(Math.random()*200+30);const g=Math.floor(Math.random()*200+30);const b=Math.floor(Math.random()*200+30);return `rgb(${r},${g},${b})`; }
-</script>
 </body>
 </html>
-
