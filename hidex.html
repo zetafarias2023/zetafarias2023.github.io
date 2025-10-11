@@ -1,118 +1,160 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZetaChat Online</title>
 <style>
-  * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-  body {
-    margin: 0; background: url('https://wallpapers.com/images/hd/anime-landscape-night-lake-y9xz8p2bl7c8c2c2.jpg') center/cover no-repeat;
-    display: flex; align-items: center; justify-content: center; height: 100vh;
-  }
-  #app { width: 500px; height: 500px; background: rgba(0,0,0,0.6); border-radius: 15px; color: white; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-  #login, #chat { flex: 1; display: none; flex-direction: column; }
-  #login.active, #chat.active { display: flex; }
-  header { background: #075E54; padding: 10px; text-align: center; font-weight: bold; }
-  #roomNameHeader { background:#128C7E; text-align:center; padding:5px; font-weight:bold; }
-  #messages { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; max-height:380px; }
-  .msg { margin: 5px 0; padding: 6px 10px; border-radius: 10px; max-width: 75%; word-wrap: break-word; font-size:0.95em; }
-  .me { background: #25D366; align-self: flex-end; color: #000; }
-  .other { background: #ECE5DD; color: #000; align-self: flex-start; }
-  footer { display: flex; padding: 8px; background: #222; }
-  footer input { flex: 1; padding: 6px; border-radius: 20px; border: none; }
-  footer button { margin-left: 6px; border: none; border-radius: 50%; width: 36px; height: 36px; background: #25D366; color: #fff; font-weight: bold; cursor: pointer; }
-  #ig { position: absolute; bottom: 10px; right: 10px; font-size: 14px; color: #fff; opacity: 0.7; }
-  #invite { background:#128C7E; color:white; padding:4px 8px; border:none; border-radius:5px; cursor:pointer; margin:4px auto; font-size:0.9em; }
+*{box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;background:#111;overflow:hidden;}
+#app{width:600px;height:200px;background:rgba(0,0,0,0.8);border-radius:12px;color:white;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+#login,#chat{flex:1;display:none;flex-direction:column;}
+#login.active,#chat.active{display:flex;}
+header{background:#075E54;padding:4px;font-weight:bold;text-align:center;font-size:0.9em;display:flex;justify-content:space-between;align-items:center;border-radius:12px 12px 0 0;}
+#logoutBtn,#membersBtn{font-size:0.6em;cursor:pointer;background:#128C7E;border:none;border-radius:3px;padding:1px 3px;color:white;margin-left:2px;}
+#tabs{display:flex;justify-content:center;margin:4px 0;}
+.tab{flex:1;text-align:center;padding:2px 0;cursor:pointer;background:#222;color:#fff;border-radius:3px;margin:0 2px;}
+.tab.active{background:#25D366;color:#000;font-weight:bold;}
+#container{display:flex;flex:1;overflow:hidden;flex-direction:column-reverse;transition:all 0.3s;background:#000;position:relative;}
+#membersList{display:none;position:absolute;top:25px;right:3px;background:#222;border-radius:3px;padding:2px;z-index:10;max-height:120px;overflow-y:auto;font-size:0.6em;}
+#membersList div{padding:1px 2px;display:flex;justify-content:space-between;align-items:center;margin:1px 0;background:#333;border-radius:3px;}
+#messages{flex:1;padding:2px;overflow-y:auto;display:flex;flex-direction:column-reverse;-webkit-overflow-scrolling:touch;}
+.msg{margin:1px 0;padding:4px 6px;border-radius:8px;max-width:75%;word-wrap:break-word;font-size:0.7em;font-weight:bold;display:flex;align-items:center;transition:all 0.3s ease;}
+.msg span.avatar{margin-right:3px;font-size:0.9em;}
+footer{display:flex;padding:2px;background:#222;border-radius:0 0 12px 12px;}
+footer input{flex:1;padding:2px;border-radius:12px;border:none;font-size:0.7em;}
+footer button{margin-left:2px;border:none;border-radius:50%;width:24px;height:24px;background:#25D366;color:#fff;font-weight:bold;cursor:pointer;font-size:0.8em;}
+#invite{background:#128C7E;color:white;padding:2px 4px;border:none;border-radius:3px;cursor:pointer;margin:1px auto;font-size:0.6em;display:block;width:90%;}
 </style>
 </head>
 <body>
+
 <div id="app">
   <div id="login" class="active">
     <header>ZetaChat</header>
-    <div style="margin:auto;text-align:center;">
-      <p>Ingresá tu nombre para empezar</p>
-      <input id="username" placeholder="Tu nombre" style="padding:8px;border:none;border-radius:5px;width:80%;" />
-      <p>Y un nombre de sala para crear/unirte</p>
-      <input id="room" placeholder="Nombre de sala" style="padding:8px;border:none;border-radius:5px;width:80%;" />
-      <br/><br/>
-      <button onclick="joinChat()" style="padding:10px 20px;border:none;border-radius:5px;background:#25D366;font-weight:bold;">Entrar</button>
+    <div id="tabs">
+      <div class="tab active" onclick="showTab('register')">Registrarse</div>
+      <div class="tab" onclick="showTab('loginForm')">Entrar</div>
+    </div>
+    <div id="register" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <input id="regUser" placeholder="Usuario" style="padding:4px;margin:2px;border:none;border-radius:3px;width:80%;font-size:0.7em;">
+      <input id="regAvatar" placeholder="😎" maxlength="2" style="padding:4px;margin:2px;border:none;border-radius:3px;width:80%;text-align:center;font-size:0.9em;">
+      <input id="regRoom" placeholder="Crear Sala" style="padding:4px;margin:2px;border:none;border-radius:3px;width:80%;font-size:0.7em;">
+      <button onclick="registerUser()" style="padding:4px 8px;margin-top:4px;border:none;border-radius:3px;background:#25D366;font-size:0.7em;">Registrar & Crear Sala</button>
+    </div>
+    <div id="loginForm" style="flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;">
+      <input id="logUser" placeholder="Usuario" style="padding:4px;margin:2px;border:none;border-radius:3px;width:80%;font-size:0.7em;">
+      <input id="logAvatar" placeholder="😎" maxlength="2" style="padding:4px;margin:2px;border:none;border-radius:3px;width:80%;text-align:center;font-size:0.9em;">
+      <input id="logRoom" placeholder="Sala" style="padding:4px;margin:2px;border:none;border-radius:3px;width:80%;font-size:0.7em;">
+      <button onclick="loginUser()" style="padding:4px 8px;margin-top:4px;border:none;border-radius:3px;background:#25D366;font-size:0.7em;">Entrar</button>
     </div>
   </div>
 
   <div id="chat">
-    <header>ZetaChat</header>
-    <div id="roomNameHeader">Sala: <span id="roomName">Chat</span></div>
-    <button id="invite" onclick="inviteFriend()">Invitar amigo</button>
-    <div id="messages"></div>
+    <header>
+      <div>
+        <button id="membersBtn" onclick="toggleMembers()">Miembros</button>
+        <button id="logoutBtn" onclick="logout()">Salir</button>
+      </div>
+    </header>
+    <div id="container">
+      <div id="messages"></div>
+      <div id="membersList"></div>
+    </div>
+    <button id="invite" onclick="inviteFriend()">Invitar amigos</button>
     <footer>
-      <input id="msgInput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendMessage()" />
+      <input id="msgInput" placeholder="Escribe..." onkeydown="if(event.key==='Enter')sendMessage()" />
       <button onclick="sendMessage()">➤</button>
     </footer>
   </div>
 </div>
-<div id="ig">@zeta166_</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBmb479LPMp_0CM5gpDj6mFzDAEoBGkOg8",
-    authDomain: "zetachat-666a5.firebaseapp.com",
-    databaseURL: "https://zetachat-666a5-default-rtdb.firebaseio.com",
-    projectId: "zetachat-666a5",
-    storageBucket: "zetachat-666a5.firebasestorage.app",
-    messagingSenderId: "772092262393",
-    appId: "1:772092262393:web:eb6266aa6cebcb3794ef28"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+const firebaseConfig={apiKey:"AIzaSyBmb479LPMp_0CM5gpDj6mFzDAEoBGkOg8",authDomain:"zetachat-666a5.firebaseapp.com",databaseURL:"https://zetachat-666a5-default-rtdb.firebaseio.com",projectId:"zetachat-666a5",storageBucket:"zetachat-666a5.firebasestorage.app",messagingSenderId:"772092262393",appId:"1:772092262393:web:eb6266aa6cebcb3794ef28"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
 
-  let username = "", room = "";
+let username="", avatar="", room="";
+let userColors={};
 
-  function joinChat() {
-    username = document.getElementById('username').value.trim();
-    room = document.getElementById('room').value.trim();
-    if (!username || !room) return alert("Completá tu nombre y sala.");
-    document.getElementById('login').classList.remove('active');
-    document.getElementById('chat').classList.add('active');
-    document.getElementById('roomName').innerText = room;
-    listenMessages();
+function showTab(tab){document.getElementById('register').style.display=tab==='register'?'flex':'none';document.getElementById('loginForm').style.display=tab==='loginForm'?'flex':'none';document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');}
 
-    // Revisar enlace por si viene ?room=
-    const urlParams = new URLSearchParams(window.location.search);
-    const linkRoom = urlParams.get('room');
-    if(linkRoom && linkRoom !== room) {
-      room = linkRoom;
-      document.getElementById('roomName').innerText = room;
+function registerUser(){
+  username=document.getElementById('regUser').value.trim();
+  avatar=document.getElementById('regAvatar').value.trim()||"🙂";
+  room=document.getElementById('regRoom').value.trim();
+  if(!username||!room) return alert("Completá usuario y sala.");
+  db.ref('salas/'+room+'/members/'+username).set({avatar:avatar});
+  enterChat();
+}
+
+function loginUser(){
+  username=document.getElementById('logUser').value.trim();
+  avatar=document.getElementById('logAvatar').value.trim()||"🙂";
+  room=document.getElementById('logRoom').value.trim();
+  if(!username||!room) return alert("Completá usuario y sala.");
+  db.ref('salas/'+room+'/members/'+username).set({avatar:avatar});
+  enterChat();
+}
+
+function enterChat(){
+  document.getElementById('login').classList.remove('active');
+  document.getElementById('chat').classList.add('active');
+  listenMessages();
+  listenMembers();
+}
+
+function sendMessage(){
+  const msg=document.getElementById('msgInput').value.trim();
+  if(msg==="") return;
+  db.ref('salas/'+room+'/messages').push().set({user:username,text:msg,avatar:avatar,time:Date.now()});
+  document.getElementById('msgInput').value="";
+}
+
+function listenMessages(){
+  const msgDiv=document.getElementById('messages');
+  db.ref('salas/'+room+'/messages').on('child_added',snap=>{
+    const data=snap.val();
+    if(!userColors[data.user]) userColors[data.user]=randomColor();
+    const div=document.createElement('div');
+    div.classList.add('msg');
+    div.style.background=userColors[data.user];
+    div.style.color='#000';
+    div.style.alignSelf=data.user===username?'flex-end':'flex-start';
+    const spanAvatar=document.createElement('span');
+    spanAvatar.classList.add('avatar'); spanAvatar.textContent=data.avatar||"🙂";
+    const spanText=document.createElement('span'); spanText.textContent=data.user+": "+data.text;
+    div.appendChild(spanAvatar); div.appendChild(spanText);
+    msgDiv.prepend(div);
+    msgDiv.scrollTop=0;
+  });
+}
+
+function listenMembers(){
+  const membersDiv=document.getElementById('membersList');
+  db.ref('salas/'+room+'/members').on('value',snap=>{
+    membersDiv.innerHTML="";
+    const members=snap.val()||{};
+    for(let member in members){
+      const div=document.createElement('div');
+      div.textContent=member;
+      if(member!==username){
+        const btn=document.createElement('button'); btn.textContent="❌"; btn.style.fontSize="0.6em";
+        btn.onclick=()=>db.ref('salas/'+room+'/members/'+member).remove();
+        div.appendChild(btn);
+      }
+      membersDiv.appendChild(div);
     }
-  }
+  });
+}
 
-  function sendMessage() {
-    const msg = document.getElementById('msgInput').value.trim();
-    if (msg === "") return;
-    const ref = db.ref('salas/' + room).push();
-    ref.set({ user: username, text: msg, time: Date.now() });
-    document.getElementById('msgInput').value = "";
-  }
-
-  function listenMessages() {
-    const msgDiv = document.getElementById('messages');
-    db.ref('salas/' + room).on('child_added', snap => {
-      const data = snap.val();
-      const div = document.createElement('div');
-      div.classList.add('msg');
-      div.classList.add(data.user === username ? 'me' : 'other');
-      div.textContent = data.user + ": " + data.text;
-      msgDiv.appendChild(div);
-      msgDiv.scrollTop = msgDiv.scrollHeight;
-    });
-  }
-
-  function inviteFriend() {
-    const link = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(room);
-    prompt("Copiá este enlace y compartilo con un amigo:", link);
-  }
+function toggleMembers(){const m=document.getElementById('membersList'); m.style.display=m.style.display==='block'?'none':'block';}
+function inviteFriend(){const link=window.location.origin+window.location.pathname+"?room="+encodeURIComponent(room); prompt("Copiá este enlace y compartilo:",link);}
+function logout(){db.ref('salas/'+room+'/members/'+username).remove(); username=""; avatar=""; room=""; userColors={}; document.getElementById('login').classList.add('active'); document.getElementById('chat').classList.remove('active'); document.getElementById('msgInput').value=""; document.getElementById('messages').innerHTML=""; document.getElementById('membersList').innerHTML="";}
+function randomColor(){const r=Math.floor(Math.random()*200+30);const g=Math.floor(Math.random()*200+30);const b=Math.floor(Math.random()*200+30);return `rgb(${r},${g},${b})`; }
 </script>
 </body>
 </html>
+
