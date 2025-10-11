@@ -1,208 +1,119 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title> Zeta Anotador</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZetaChat Online</title>
 <style>
-body{
-  margin:0; font-family:Arial, sans-serif; color:#fff;
-  background:linear-gradient(180deg, rgba(0,0,0,.65), rgba(0,0,0,.65)),
-    url("https://media.giphy.com/media/12XMGIWtrHBl5e/giphy.gif")
-    no-repeat center/cover fixed;
-}
-.overlay{
-  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);
-  display:flex;justify-content:center;align-items:center;
-  z-index:9999;flex-direction:column;text-align:center;padding:20px;
-}
-.overlay h2{font-size:1.4rem;margin-bottom:10px;color:#ff4444;}
-.overlay input{margin:4px 0;padding:6px;border-radius:6px;border:none;font-size:1rem;}
-.overlay button{margin-top:10px;background:#e91e63;color:#fff;font-weight:bold;border:none;padding:8px 14px;border-radius:8px;font-size:1rem;cursor:pointer;}
-.overlay button:hover{background:#c2185b;}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;}
-#titulo{margin:0;font-size:1.3rem;font-weight:700;color:red;text-shadow:1px 1px 4px black;}
-.yt{color:#ffd54a;text-decoration:none;font-weight:600;font-size:.85rem;}
-.logout{background:#ff4444;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;}
-.layout{display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;}
-.row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;width:100%;}
-.panel{background:rgba(0,0,0,.55);border-radius:8px;padding:8px;flex:1 1 200px;max-width:240px;}
-.config{background:rgba(0,0,0,.55);border-radius:8px;padding:8px;text-align:center;font-size:.9rem;}
-.btn{border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-weight:bold;font-size:.85rem;}
-.btn.target{background:#2ecc71;}
-.btn.ctrl{background:#e53935;color:#fff;min-width:32px;}
-.btn.reset{background:#2196f3;color:#fff;margin-top:6px;}
-.marcador__header{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;}
-.marcador__header h3{margin:0;font-size:1rem;}
-.palitos{margin:6px 0;font-size:1.2rem;min-height:1.5em;background:rgba(255,255,255,.08);border-radius:6px;padding:4px;text-align:center;word-wrap:break-word;}
-.historial{background:rgba(0,0,0,.55);border-radius:8px;padding:6px;max-height:120px;overflow:auto;width:85%;font-size:.8rem;}
-.historial h3{margin:0 0 4px;font-size:.9rem;}
-#listaHistorial{list-style:none;margin:0;padding:0;}
-#listaHistorial li{background:rgba(255,255,255,.1);margin-bottom:2px;padding:2px 4px;border-radius:4px;}
-.bottombar{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:rgba(0,0,0,.6);font-size:.8rem;}
-
-/* 📱 Responsive modo teléfono */
-@media (max-width:600px){
-  #titulo{font-size:1rem;}
-  .row{flex-direction:column;align-items:center;}
-  .panel{max-width:100%;width:90%;}
-  .historial{width:95%;}
-}
+  * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    margin: 0; background: url('https://wallpapers.com/images/hd/anime-landscape-night-lake-y9xz8p2bl7c8c2c2.jpg') center/cover no-repeat;
+    display: flex; align-items: center; justify-content: center; height: 100vh;
+  }
+  #app { width: 500px; height: 500px; background: rgba(0,0,0,0.6); border-radius: 15px; color: white; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  #login, #chat { flex: 1; display: none; flex-direction: column; }
+  #login.active, #chat.active { display: flex; }
+  header { background: #075E54; padding: 10px; text-align: center; font-weight: bold; }
+  #roomNameHeader { background:#128C7E; text-align:center; padding:5px; font-weight:bold; }
+  #messages { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; max-height:380px; }
+  .msg { margin: 5px 0; padding: 6px 10px; border-radius: 10px; max-width: 75%; word-wrap: break-word; font-size:0.95em; }
+  .me { background: #25D366; align-self: flex-end; color: #000; }
+  .other { background: #ECE5DD; color: #000; align-self: flex-start; }
+  footer { display: flex; padding: 8px; background: #222; }
+  footer input { flex: 1; padding: 6px; border-radius: 20px; border: none; }
+  footer button { margin-left: 6px; border: none; border-radius: 50%; width: 36px; height: 36px; background: #25D366; color: #fff; font-weight: bold; cursor: pointer; }
+  #ig { position: absolute; bottom: 10px; right: 10px; font-size: 14px; color: #fff; opacity: 0.7; }
+  #invite { background:#128C7E; color:white; padding:4px 8px; border:none; border-radius:5px; cursor:pointer; margin:4px auto; font-size:0.9em; }
 </style>
 </head>
 <body>
-<!-- Pantalla de Login -->
-<div id="login" class="overlay">
-  <h2>🔐 Iniciar Sesión</h2>
-  <input id="user" type="text" placeholder="Usuario">
-  <input id="pass" type="password" placeholder="Contraseña">
-  <button onclick="login()">Entrar</button>
-</div>
-
-<!-- Pantalla IG obligatoria -->
-<div id="promo" class="overlay" style="display:none;">
-  <h2>🔥 Sígueme en Instagram 🔥</h2>
-  <p>Debes seguir <strong>@zeta166_</strong> para usar el Anotador</p>
-  <button onclick="seguirIG()">Seguir en Instagram</button>
-</div>
-
-<header class="topbar">
-  <h1 id="titulo"> Zeta Anotador</h1>
-  <div>
-    <a class="yt" href="https://youtube.com/@el_zetaff" target="_blank">YouTube: el_zetaff</a>
-    <button class="logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-  </div>
-</header>
-
-<main class="layout" id="app" style="filter:blur(5px); pointer-events:none;">
-  <div class="config" id="config">
-    <h2 style="margin:0;font-size:1rem;">Elegir tantos</h2>
-    <button class="btn target" onclick="elegirTantos(15)">15</button>
-    <button class="btn target" onclick="elegirTantos(30)">30</button>
-  </div>
-
-  <div class="row">
-    <div class="panel">
-      <div class="marcador__header">
-        <h3>Nosotros</h3>
-        <div><span id="nNum">0</span>/<span id="nMax">—</span></div>
-      </div>
-      <div id="nPalitos" class="palitos"></div>
-      <div style="text-align:center;">
-        <button class="btn ctrl" onclick="sumar('n')">+</button>
-        <button class="btn ctrl" onclick="restar('n')">-</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="marcador__header">
-        <h3>Ellos</h3>
-        <div><span id="eNum">0</span>/<span id="eMax">—</span></div>
-      </div>
-      <div id="ePalitos" class="palitos"></div>
-      <div style="text-align:center;">
-        <button class="btn ctrl" onclick="sumar('e')">+</button>
-        <button class="btn ctrl" onclick="restar('e')">-</button>
-      </div>
+<div id="app">
+  <div id="login" class="active">
+    <header>ZetaChat</header>
+    <div style="margin:auto;text-align:center;">
+      <p>Ingresá tu nombre para empezar</p>
+      <input id="username" placeholder="Tu nombre" style="padding:8px;border:none;border-radius:5px;width:80%;" />
+      <p>Y un nombre de sala para crear/unirte</p>
+      <input id="room" placeholder="Nombre de sala" style="padding:8px;border:none;border-radius:5px;width:80%;" />
+      <br/><br/>
+      <button onclick="joinChat()" style="padding:10px 20px;border:none;border-radius:5px;background:#25D366;font-weight:bold;">Entrar</button>
     </div>
   </div>
 
-  <div class="historial">
-    <h3>Historial</h3>
-    <ul id="listaHistorial"></ul>
+  <div id="chat">
+    <header>ZetaChat</header>
+    <div id="roomNameHeader">Sala: <span id="roomName">Chat</span></div>
+    <button id="invite" onclick="inviteFriend()">Invitar amigo</button>
+    <div id="messages"></div>
+    <footer>
+      <input id="msgInput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendMessage()" />
+      <button onclick="sendMessage()">➤</button>
+    </footer>
   </div>
+</div>
+<div id="ig">@zeta166_</div>
 
-  <button class="btn reset" onclick="reiniciarTodo()">🔄 Reiniciar Tantos</button>
-</main>
-
-<footer class="bottombar">
-  <span>Instagram: @el_zetaff</span>
-  <span>GC TEAM</span>
-</footer>
-
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <script>
-let maxPuntos=null;
-let nPuntos=0, ePuntos=0;
-let nGano=false, eGano=false;
+  const firebaseConfig = {
+    apiKey: "AIzaSyBmb479LPMp_0CM5gpDj6mFzDAEoBGkOg8",
+    authDomain: "zetachat-666a5.firebaseapp.com",
+    databaseURL: "https://zetachat-666a5-default-rtdb.firebaseio.com",
+    projectId: "zetachat-666a5",
+    storageBucket: "zetachat-666a5.firebasestorage.app",
+    messagingSenderId: "772092262393",
+    appId: "1:772092262393:web:eb6266aa6cebcb3794ef28"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-// --- LOGIN ---
-function login(){
-  let u=document.getElementById("user").value.trim();
-  let p=document.getElementById("pass").value.trim();
-  if(u===""||p===""){ alert("Completa usuario y contraseña"); return; }
-  localStorage.setItem("anotadorUser",u);
-  localStorage.setItem("anotadorPass",p);
-  document.getElementById("login").style.display="none";
-  document.getElementById("promo").style.display="flex";
-}
-if(localStorage.getItem("anotadorUser") && localStorage.getItem("anotadorPass")){
-  document.getElementById("login").style.display="none";
-  document.getElementById("promo").style.display="flex";
-}
-function cerrarSesion(){
-  localStorage.clear(); // 🔥 borra usuario, contra, historial, todo
-  nPuntos=0; ePuntos=0; nGano=false; eGano=false;
-  document.getElementById("listaHistorial").innerHTML="";
-  render();
-  document.getElementById("login").style.display="flex";
-  document.getElementById("promo").style.display="none";
-  document.getElementById("app").style.filter="blur(5px)";
-  document.getElementById("app").style.pointerEvents="none";
-}
+  let username = "", room = "";
 
-// --- PROMO IG ---
-function seguirIG(){
-  window.open("https://instagram.com/el_zetaff","_blank");
-  document.getElementById("promo").style.display="none";
-  document.getElementById("app").style.filter="none";
-  document.getElementById("app").style.pointerEvents="auto";
-}
+  function joinChat() {
+    username = document.getElementById('username').value.trim();
+    room = document.getElementById('room').value.trim();
+    if (!username || !room) return alert("Completá tu nombre y sala.");
+    document.getElementById('login').classList.remove('active');
+    document.getElementById('chat').classList.add('active');
+    document.getElementById('roomName').innerText = room;
+    listenMessages();
 
-// --- FUNCIONES DE JUEGO ---
-function elegirTantos(v){
-  maxPuntos=v; nPuntos=ePuntos=0; nGano=eGano=false;
-  document.getElementById("config").style.display="none";
-  render();
-  registrar("Elegiste "+v+" tantos");
-  decir("elegiste estos tantos espero ganes bello");
-}
-function formatoPalitos(p){
-  let str=""; let grupos=Math.floor(p/5); let resto=p%5;
-  for(let i=0;i<grupos;i++) str+="||||╳ ";
-  str+="|".repeat(resto); return str;
-}
-function render(){
-  document.getElementById("nNum").textContent=nPuntos;
-  document.getElementById("nMax").textContent=maxPuntos||"—";
-  document.getElementById("nPalitos").textContent=formatoPalitos(nPuntos);
-  document.getElementById("eNum").textContent=ePuntos;
-  document.getElementById("eMax").textContent=maxPuntos||"—";
-  document.getElementById("ePalitos").textContent=formatoPalitos(ePuntos);
-}
-function sumar(q){
-  if(!maxPuntos) return;
-  if(q==="n" && nPuntos<maxPuntos){
-    nPuntos++;
-    if(nPuntos===maxPuntos && !nGano){
-      nGano=true; decir("ganaste chamaco felicidadez"); registrar("¡Ganaron Nosotros!");
+    // Revisar enlace por si viene ?room=
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkRoom = urlParams.get('room');
+    if(linkRoom && linkRoom !== room) {
+      room = linkRoom;
+      document.getElementById('roomName').innerText = room;
     }
   }
-  if(q==="e" && ePuntos<maxPuntos){
-    ePuntos++;
-    if(ePuntos===maxPuntos && !eGano){
-      eGano=true; decir("ganaste chamaco felicidadez"); registrar("¡Ganaron Ellos!");
-    }
+
+  function sendMessage() {
+    const msg = document.getElementById('msgInput').value.trim();
+    if (msg === "") return;
+    const ref = db.ref('salas/' + room).push();
+    ref.set({ user: username, text: msg, time: Date.now() });
+    document.getElementById('msgInput').value = "";
   }
-  render();
-}
-function restar(q){ if(!maxPuntos) return; if(q==="n"&&nPuntos>0)nPuntos--; if(q==="e"&&ePuntos>0)ePuntos--; render(); }
-function reiniciarTodo(){
-  nPuntos=0; ePuntos=0; nGano=false; eGano=false; render();
-  registrar("Se reiniciaron todos los tantos");
-}
-function registrar(t){ let li=document.createElement("li"); li.textContent="["+new Date().toLocaleTimeString()+"] "+t; document.getElementById("listaHistorial").prepend(li); }
-function decir(txt){ speechSynthesis.cancel(); let u=new SpeechSynthesisUtterance(txt); u.lang="es-ES"; speechSynthesis.speak(u); }
-render();
+
+  function listenMessages() {
+    const msgDiv = document.getElementById('messages');
+    db.ref('salas/' + room).on('child_added', snap => {
+      const data = snap.val();
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(data.user === username ? 'me' : 'other');
+      div.textContent = data.user + ": " + data.text;
+      msgDiv.appendChild(div);
+      msgDiv.scrollTop = msgDiv.scrollHeight;
+    });
+  }
+
+  function inviteFriend() {
+    const link = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(room);
+    prompt("Copiá este enlace y compartilo con un amigo:", link);
+  }
 </script>
 </body>
 </html>
+
