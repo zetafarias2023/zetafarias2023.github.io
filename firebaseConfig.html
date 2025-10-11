@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZetaChat Online</title>
+<style>
+  * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    margin: 0; background: url('https://wallpapers.com/images/hd/anime-landscape-night-lake-y9xz8p2bl7c8c2c2.jpg') center/cover no-repeat;
+    display: flex; align-items: center; justify-content: center; height: 100vh;
+  }
+  #app { width: 500px; height: 500px; background: rgba(0,0,0,0.6); border-radius: 15px; color: white; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  #login, #chat { flex: 1; display: none; flex-direction: column; }
+  #login.active, #chat.active { display: flex; }
+  header { background: #075E54; padding: 10px; text-align: center; font-weight: bold; }
+  #roomNameHeader { background:#128C7E; text-align:center; padding:5px; font-weight:bold; }
+  #messages { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; max-height:380px; }
+  .msg { margin: 5px 0; padding: 6px 10px; border-radius: 10px; max-width: 75%; word-wrap: break-word; font-size:0.95em; }
+  .me { background: #25D366; align-self: flex-end; color: #000; }
+  .other { background: #ECE5DD; color: #000; align-self: flex-start; }
+  footer { display: flex; padding: 8px; background: #222; }
+  footer input { flex: 1; padding: 6px; border-radius: 20px; border: none; }
+  footer button { margin-left: 6px; border: none; border-radius: 50%; width: 36px; height: 36px; background: #25D366; color: #fff; font-weight: bold; cursor: pointer; }
+  #ig { position: absolute; bottom: 10px; right: 10px; font-size: 14px; color: #fff; opacity: 0.7; }
+  #invite { background:#128C7E; color:white; padding:4px 8px; border:none; border-radius:5px; cursor:pointer; margin:4px auto; font-size:0.9em; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="login" class="active">
+    <header>ZetaChat</header>
+    <div style="margin:auto;text-align:center;">
+      <p>Ingresá tu nombre para empezar</p>
+      <input id="username" placeholder="Tu nombre" style="padding:8px;border:none;border-radius:5px;width:80%;" />
+      <p>Y un nombre de sala para crear/unirte</p>
+      <input id="room" placeholder="Nombre de sala" style="padding:8px;border:none;border-radius:5px;width:80%;" />
+      <br/><br/>
+      <button onclick="joinChat()" style="padding:10px 20px;border:none;border-radius:5px;background:#25D366;font-weight:bold;">Entrar</button>
+    </div>
+  </div>
+
+  <div id="chat">
+    <header>ZetaChat</header>
+    <div id="roomNameHeader">Sala: <span id="roomName">Chat</span></div>
+    <button id="invite" onclick="inviteFriend()">Invitar amigo</button>
+    <div id="messages"></div>
+    <footer>
+      <input id="msgInput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendMessage()" />
+      <button onclick="sendMessage()">➤</button>
+    </footer>
+  </div>
+</div>
+<div id="ig">@zeta166_</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBmb479LPMp_0CM5gpDj6mFzDAEoBGkOg8",
+    authDomain: "zetachat-666a5.firebaseapp.com",
+    databaseURL: "https://zetachat-666a5-default-rtdb.firebaseio.com",
+    projectId: "zetachat-666a5",
+    storageBucket: "zetachat-666a5.firebasestorage.app",
+    messagingSenderId: "772092262393",
+    appId: "1:772092262393:web:eb6266aa6cebcb3794ef28"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let username = "", room = "";
+
+  function joinChat() {
+    username = document.getElementById('username').value.trim();
+    room = document.getElementById('room').value.trim();
+    if (!username || !room) return alert("Completá tu nombre y sala.");
+    document.getElementById('login').classList.remove('active');
+    document.getElementById('chat').classList.add('active');
+    document.getElementById('roomName').innerText = room;
+    listenMessages();
+
+    // Revisar enlace por si viene ?room=
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkRoom = urlParams.get('room');
+    if(linkRoom && linkRoom !== room) {
+      room = linkRoom;
+      document.getElementById('roomName').innerText = room;
+    }
+  }
+
+  function sendMessage() {
+    const msg = document.getElementById('msgInput').value.trim();
+    if (msg === "") return;
+    const ref = db.ref('salas/' + room).push();
+    ref.set({ user: username, text: msg, time: Date.now() });
+    document.getElementById('msgInput').value = "";
+  }
+
+  function listenMessages() {
+    const msgDiv = document.getElementById('messages');
+    db.ref('salas/' + room).on('child_added', snap => {
+      const data = snap.val();
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(data.user === username ? 'me' : 'other');
+      div.textContent = data.user + ": " + data.text;
+      msgDiv.appendChild(div);
+      msgDiv.scrollTop = msgDiv.scrollHeight;
+    });
+  }
+
+  function inviteFriend() {
+    const link = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(room);
+    prompt("Copiá este enlace y compartilo con un amigo:", link);
+  }
+</script>
+</body>
+</html>
