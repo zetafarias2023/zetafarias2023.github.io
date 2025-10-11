@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZetaChat - Invitación en esquina</title>
+<title>ZetaChat - Sala por nombre</title>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, deleteDoc, getDocs, where, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// Config Firebase
+// 🔒 Config Firebase
 const firebaseConfig = {
   apiKey: "TU_API_KEY",
   authDomain: "TU_AUTH_DOMAIN",
@@ -25,11 +25,13 @@ const db = getFirestore(app);
 // DOM
 const usernameForm = document.getElementById("username-form");
 const usernameInput = document.getElementById("username-input");
+const roomInput = document.getElementById("room-input");
 const chatContainer = document.getElementById("chat-container");
 const messageForm = document.getElementById("message-form");
 const messageInput = document.getElementById("message-input");
 const messageList = document.getElementById("message-list");
 const usersList = document.getElementById("users-list");
+const memberCount = document.getElementById("member-count");
 const inviteBtn = document.getElementById("invite-btn");
 const invitePopup = document.getElementById("invite-popup");
 const inviteLink = document.getElementById("invite-link");
@@ -37,18 +39,10 @@ const closeInviteBtn = document.getElementById("close-invite-btn");
 const closeRoomBtn = document.getElementById("close-room-btn");
 
 let username = "";
-let roomId = "";
+let roomName = "";
 let avatar = { initials: "", color: "" };
 let userDocId = "";
 let isRoomOwner = false;
-
-// Sala por enlace
-const urlParams = new URLSearchParams(window.location.search);
-roomId = urlParams.get("room");
-if(!roomId){
-  roomId = Math.random().toString(36).substring(2,10);
-  isRoomOwner = true;
-}
 
 // Avatar aleatorio
 function generateAvatar() {
@@ -62,22 +56,27 @@ function generateAvatar() {
 usernameForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   username = usernameInput.value.trim();
-  if(!username) return alert("Ingresa tu nombre de usuario");
+  roomName = roomInput.value.trim();
+  if(!username || !roomName) return alert("Ingresa tu nombre y el nombre de la sala");
+  
   document.getElementById("username-container").style.display = "none";
   chatContainer.style.display = "grid";
   avatar = generateAvatar();
 
-  const fullLink = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+  // Enlace de invitación
+  const fullLink = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomName)}`;
   inviteLink.value = fullLink;
 
+  isRoomOwner = true; // quien crea el chat
   closeRoomBtn.style.display = isRoomOwner ? "inline-block" : "none";
 
   // Registrar usuario
   const usersRef = collection(db, "users");
   const newUserDoc = doc(usersRef);
   userDocId = newUserDoc.id;
-  await setDoc(newUserDoc, { username, avatar, roomId, lastActive: serverTimestamp() });
+  await setDoc(newUserDoc, { username, avatar, roomName, lastActive: serverTimestamp() });
 
+  // Remover usuario al salir
   window.addEventListener("beforeunload", async () => {
     await deleteDoc(doc(db, "users", userDocId));
   });
@@ -88,7 +87,7 @@ messageForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = messageInput.value.trim();
   if(!text) return;
-  await addDoc(collection(db, "messages"), { username, avatar, roomId, text, createdAt: new Date() });
+  await addDoc(collection(db, "messages"), { username, avatar, roomName, text, createdAt: new Date() });
   messageInput.value = "";
 });
 
@@ -98,7 +97,7 @@ onSnapshot(qMessages, (snapshot) => {
   messageList.innerHTML = "";
   snapshot.forEach(docSnap => {
     const msg = docSnap.data();
-    if(msg.roomId !== roomId) return;
+    if(msg.roomName !== roomName) return;
     const div = document.createElement("div");
     div.className = msg.username === username ? "message sent" : "message received";
 
@@ -126,26 +125,29 @@ onSnapshot(qMessages, (snapshot) => {
   });
 });
 
-// Usuarios conectados
+// Usuarios conectados y contador
 const qUsers = query(collection(db, "users"));
 onSnapshot(qUsers, (snapshot) => {
   usersList.innerHTML = "";
+  let count = 0;
   snapshot.forEach(docSnap => {
     const user = docSnap.data();
-    if(user.roomId === roomId){
+    if(user.roomName === roomName){
+      count++;
       const div = document.createElement("div");
       div.className = "user";
       div.innerHTML = `<div class="avatar" style="background:${user.avatar.color}">${user.avatar.initials}</div> <span>${user.username}</span>`;
       usersList.appendChild(div);
     }
   });
+  memberCount.textContent = `Miembros: ${count}`;
 });
 
 // Cerrar sala
 closeRoomBtn.addEventListener("click", async () => {
   if(!confirm("¿Cerrar sala y borrar todos los mensajes?")) return;
   const msgsRef = collection(db, "messages");
-  const q = query(msgsRef, where("roomId", "==", roomId));
+  const q = query(msgsRef, where("roomName", "==", roomName));
   const snapshot = await getDocs(q);
   snapshot.forEach(async docSnap => await deleteDoc(doc(db, "messages", docSnap.id)));
   messageList.innerHTML = "";
@@ -155,8 +157,6 @@ closeRoomBtn.addEventListener("click", async () => {
 inviteBtn.addEventListener("click", () => {
   invitePopup.style.display = invitePopup.style.display === "block" ? "none" : "block";
 });
-
-// Cerrar popup invitación
 closeInviteBtn.addEventListener("click", () => {
   invitePopup.style.display = "none";
 });
@@ -171,7 +171,7 @@ button { background:#34b7f1; border:none; padding:10px; border-radius:8px; color
 #chat-container { display:none; height:80vh; background:#fff; border-radius:10px; padding:10px; display:grid; grid-template-columns:150px 1fr; grid-gap:10px; position:relative; }
 #message-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
 #users-list { background:#f0f0f0; padding:5px; border-radius:8px; display:flex; flex-direction:column; gap:5px; }
-.user { display:flex; align-items:center; gap:5px; padding:2px; }
+#member-count { font-weight:bold; margin-bottom:5px; }
 .message { padding:5px; border-radius:10px; display:flex; align-items:flex-start; gap:10px; }
 .sent { background:#dcf8c6; align-self:flex-end; }
 .received { background:#f1f0f0; align-self:flex-start; }
@@ -193,7 +193,8 @@ button { background:#34b7f1; border:none; padding:10px; border-radius:8px; color
 <div id="username-container" class="container">
   <h2>Bienvenido a ZetaChat</h2>
   <form id="username-form">
-    <input type="text" id="username-input" placeholder="Ingresa tu nombre de usuario" required>
+    <input type="text" id="username-input" placeholder="Tu nombre de usuario" required>
+    <input type="text" id="room-input" placeholder="Nombre de la sala" required>
     <button>Entrar al chat</button>
   </form>
 </div>
@@ -201,11 +202,15 @@ button { background:#34b7f1; border:none; padding:10px; border-radius:8px; color
 <!-- Chat -->
 <div id="chat-container">
   <!-- Usuarios conectados -->
-  <div id="users-list"></div>
+  <div>
+    <h3>Usuarios conectados</h3>
+    <div id="member-count">Miembros: 0</div>
+    <div id="users-list"></div>
+  </div>
 
   <!-- Chat principal -->
   <div style="display:flex; flex-direction:column; height:100%;">
-    <h2>💬 Chat</h2>
+    <h2>💬 Sala: <span id="room-title"></span></h2>
 
     <!-- Botón invitar -->
     <button id="invite-btn">Invitar</button>
