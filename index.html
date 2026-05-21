@@ -271,11 +271,6 @@
         </div>
       </div>
 
-      <!-- Recent senders (shows people who recently sent messages, includes Z IA) -->
-      <div id="recentSenders" style="padding:10px 14px; border-top:1px solid #222e35; background:#0f181d; display:flex; gap:8px; align-items:center; overflow:hidden;">
-        <!-- content populated dynamically -->
-      </div>
-
       <div class="friends-list" id="friendsList"></div>
     </div>
 
@@ -1077,71 +1072,6 @@ window.handleChatImageUpload = (input) => {
 
 
 
-/* Recent senders helper: populate a small horizontal list under Z IA showing recent message senders.
-   Includes Z IA as the first item; tapping an item opens the chat (Z IA opens the bot). */
-window.loadRecentSenders = async () => {
-  try {
-    if (!auth.currentUser) return;
-    const container = document.getElementById("recentSenders");
-    container.innerHTML = ''; // clear
-    // Always include Z IA first
-    const ziaBtn = document.createElement("div");
-    ziaBtn.style.cssText = 'display:flex; gap:8px; align-items:center; cursor:pointer;';
-    ziaBtn.innerHTML = `<div class="avatar" style="width:36px; height:36px; font-size:16px;">🤖</div><div style="font-size:12px; color:#00a884; font-weight:600;">Z IA</div>`;
-    ziaBtn.addEventListener("click", () => openZiaChat());
-    container.appendChild(ziaBtn);
-
-    // get recent messages (newest first) and collect unique senders (excluding current user)
-    const msgsQ = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-    const msgsSnap = await getDocs(msgsQ);
-    const seen = new Set();
-    const senders = [];
-    msgsSnap.forEach(d => {
-      const data = d.data();
-      const email = data.user || data.senderName || '';
-      // normalize Z IA local id
-      if (email === "zia@local") return; // already added
-      if (!email || email === auth.currentUser.email) return;
-      if (!seen.has(email) && senders.length < 8) {
-        seen.add(email);
-        senders.push({ email, name: data.senderName || email.split('@')[0] });
-      }
-    });
-
-    if (senders.length === 0) {
-      const empty = document.createElement("div");
-      empty.style.cssText = 'font-size:12px;color:#8696a0;';
-      empty.innerText = 'Nadie reciente';
-      container.appendChild(empty);
-      return;
-    }
-
-    // fetch user profiles for avatar/name/fans
-    const usersSnap = await getDocs(collection(db, "users"));
-    const usersByEmail = {};
-    usersSnap.forEach(u => usersByEmail[u.data().email] = { id: u.id, ...u.data() });
-
-    senders.forEach(s => {
-      const u = usersByEmail[s.email] || { name: s.name, photoURL: "" };
-      const btn = document.createElement("div");
-      btn.style.cssText = 'display:flex; gap:8px; align-items:center; cursor:pointer; margin-left:8px;';
-      const av = u.photoURL ? `<div class="avatar" style="width:36px; height:36px; background-image:url('${u.photoURL}'); background-size:cover; background-position:center;"></div>` : `<div class="avatar" style="width:36px; height:36px;">${(u.name||s.name||'U').charAt(0).toUpperCase()}</div>`;
-      btn.innerHTML = `${av}<div style="font-size:12px; color:#e9edef; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${u.name || s.name}</div>`;
-      btn.addEventListener("click", () => {
-        // If creator official email, only follow allowed
-        if (s.email === VERIFIED_EMAIL) {
-          toggleFollow(s.email);
-        } else {
-          selectFriendChat(u.name || s.name, s.email, false, u.photoURL || '');
-        }
-      });
-      container.appendChild(btn);
-    });
-  } catch (e) {
-    console.error("loadRecentSenders error:", e);
-  }
-};
-
 async function checkContentAndTriggerBan(text) {
   const blackList = ["porno", "porn", "xnxx", "hentai", "hot", "desnuda", "desnudo", "tetas", "coger"];
   const clean = text.toLowerCase();
@@ -1215,8 +1145,6 @@ async function saveMessageToFirestore(text, imageUrl) {
       reaction: ""
     };
     await addDoc(collection(db, "messages"), payload);
-    // refresh recent senders after posting a message so sidebar updates immediately
-    try { loadRecentSenders(); } catch(e) {}
 
     // If this is the Z IA Chat room (bot), generate a local bot reply (text-only) after a short delay
     // Use active friend identity for bot detection so replies reliably work
@@ -1259,7 +1187,6 @@ async function saveMessageToFirestore(text, imageUrl) {
             createdAt: serverTimestamp(),
             reaction: ""
           });
-          try { loadRecentSenders(); } catch(e) {}
         } catch (er) { console.error("Z IA reply failed", er); }
       }, 700);
     }
@@ -1314,36 +1241,89 @@ function loadPrivateMessages() {
   });
 }
 
-function loadFriendsSidebar() {
-  onSnapshot(collection(db, "users", auth.currentUser.uid, "friends"), async snapshot => {
+async function loadFriendsSidebar() {
+  // Use real-time snapshot for the friends collection but build the sidebar after enriching with last-message times.
+  const friendsCol = collection(db, "users", auth.currentUser.uid, "friends");
+  onSnapshot(friendsCol, async snapshot => {
     friendsListDiv.innerHTML = "";
-    if(snapshot.empty) friendsListDiv.innerHTML = `<p style="padding:16px; color:#8696a0; font-size:13px; text-align:center;">No hay contactos.</p>`;
-    
+    if (snapshot.empty) {
+      friendsListDiv.innerHTML = `<p style="padding:16px; color:#8696a0; font-size:13px; text-align:center;">No hay contactos.</p>`;
+      return;
+    }
+
+    // Build a map of known users for quick access
     const allUsersSnap = await getDocs(collection(db, "users"));
     let usersMap = {};
     allUsersSnap.forEach(uDoc => { const d = uDoc.data(); usersMap[d.name] = { email: d.email, img: d.photoURL||"", status: d.status||"offline", fans: d.fansCount||0 }; });
-    
-    snapshot.forEach(friendDoc => {
-      const friendData = friendDoc.data(); const fName = friendData.name; const isBlocked = friendData.blocked || false;
-      const fAvatar = usersMap[fName]?.img || ""; const fStatus = usersMap[fName]?.status || "offline"; const fFans = usersMap[fName]?.fans || 0; const fEmail = usersMap[fName]?.email || "";
 
+    // Collect friend entries and fetch latest message timestamp & preview for each concurrently
+    const friendEntries = [];
+    const fetchPromises = [];
+    snapshot.forEach(friendDoc => {
+      const friendData = friendDoc.data();
+      const fName = friendData.name;
+      const isBlocked = friendData.blocked || false;
+      const fAvatar = usersMap[fName]?.img || "";
+      const fStatus = usersMap[fName]?.status || "offline";
+      const fFans = usersMap[fName]?.fans || 0;
+      const fEmail = usersMap[fName]?.email || "";
+      const sortedNames = [auth.currentUser.displayName, fName].sort();
+      const roomId = `room_${sortedNames[0]}_${sortedNames[1]}`;
+
+      friendEntries.push({ fName, isBlocked, fAvatar, fStatus, fFans, fEmail, roomId });
+      // fetch latest message for this room (limit 1)
+      const p = (async () => {
+        try {
+          const q = query(collection(db, "messages"), where("roomId", "==", roomId), orderBy("createdAt", "desc"));
+          const s = await getDocs(q);
+          if (!s.empty) {
+            const m = s.docs[0].data();
+            return { roomId, lastAt: m.createdAt ? (m.createdAt.toMillis ? m.createdAt.toMillis() : Date.now()) : Date.now(), lastText: m.text || (m.imageUrl ? "[imagen]" : "") };
+          }
+        } catch (e) { console.warn("latest msg fetch failed", e); }
+        return { roomId, lastAt: 0, lastText: "" };
+      })();
+      fetchPromises.push(p);
+    });
+
+    const latestResults = await Promise.all(fetchPromises);
+    const latestMap = {};
+    latestResults.forEach(r => { if (r && r.roomId) latestMap[r.roomId] = r; });
+
+    // Attach latest info and sort friends so recent message senders appear first
+    friendEntries.forEach(fe => {
+      const lr = latestMap[fe.roomId] || { lastAt: 0, lastText: "" };
+      fe.lastAt = lr.lastAt;
+      fe.lastText = lr.lastText;
+    });
+    friendEntries.sort((a,b) => (b.lastAt || 0) - (a.lastAt || 0));
+
+    // Render sorted friend list. Recent senders will appear on top.
+    friendsListDiv.innerHTML = "";
+    friendEntries.forEach(fe => {
+      const fName = fe.fName; const isBlocked = fe.isBlocked; const fAvatar = fe.fAvatar; const fStatus = fe.fStatus; const fFans = fe.fFans; const fEmail = fe.fEmail;
       const div = document.createElement("div"); div.classList.add("friend-item"); div.id = `friend-${btoa(fName)}`;
       let avRender = fAvatar ? `<div class="avatar" style="background-image:url('${fAvatar}'); background-size:cover; background-position:center;"></div>` : `<div class="avatar">${fName.charAt(0).toUpperCase()}</div>`;
       let followersLabelHtml = (checkIsVerified(fEmail, fFans) || fFans > 0) ? `<div class="followers-count">${formatFans(fFans)}</div>` : '';
-
+      // Show a small preview of the latest message and time (if any)
+      const lastPreview = fe.lastText ? `<div style="font-size:12px; color:#9fb3b0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:4px;">${fe.lastText}</div>` : "";
       div.innerHTML = `
         <div class="${fStatus === "online" ? "status-dot online" : "status-dot"}"></div>
         ${avRender}
         <div style="flex:1; overflow:hidden;">
-          <div style="font-weight: 500; font-size:15px; display:flex; align-items:center;">${fName} ${checkIsVerified(fEmail, fFans) ? verifiedBadgeHtml:''} ${isBlocked?'<span style="color:#ef4444; font-size:11px;">(Blq)</span>':''}</div>
-          <div style="font-size: 12px; color:#8696a0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${fName.toLowerCase()}</div>
-          ${followersLabelHtml}
+          <div style="font-weight: 500; font-size:15px; display:flex; align-items:center; gap:6px;">${fName} ${checkIsVerified(fEmail, fFans) ? verifiedBadgeHtml:''} ${isBlocked?'<span style="color:#ef4444; font-size:11px;">(Blq)</span>':''}</div>
+          <div style="display:flex; gap:8px; align-items:center; justify-content:flex-start;">
+            <div style="font-size: 12px; color:#8696a0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${fName.toLowerCase()}</div>
+            ${followersLabelHtml}
+          </div>
+          ${lastPreview}
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
           <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${fName}','${fEmail}', ${isBlocked}, '${fAvatar}')">Chatear</button>
           <button class="btn-primary" id="follow-btn-${btoa(fEmail)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${fEmail}', this)"></button>
         </div>
       `;
+      // clicking anywhere opens chat
       div.addEventListener("click", () => selectFriendChat(fName, fEmail, isBlocked, fAvatar));
       friendsListDiv.appendChild(div);
       setTimeout(() => updateFollowButtonUI(fEmail), 50);
@@ -1738,8 +1718,6 @@ onAuthStateChanged(auth, async user => {
     const myUserDoc = await getDocs(myUserQuery);
     if(!myUserDoc.empty) await updateDoc(doc(db, "users", myUserDoc.docs[0].id), { status: "online" });
     loadFriendsSidebar();
-    // populate recent senders after sign-in
-    try { loadRecentSenders(); } catch(e) {}
   } else {
     authDiv.style.display = "flex"; mainContainer.style.display = "none"; igLockScreen.style.display = "none";
   }
