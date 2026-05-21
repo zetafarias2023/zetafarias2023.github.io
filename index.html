@@ -1,1943 +1,381 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Z Chat Pro Ultra & Rankings</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Z Chat - Simple Realtime</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    }
-
-    body {
-      background: #0b141a;
-      color: #e9edef;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 10px;
-    }
-
-    .app {
-      width: 1200px;
-      max-width: 100%;
-      height: 850px;
-      max-height: 88vh;
-      background: #111b21;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      box-shadow: 0 6px 25px rgba(0,0,0,0.8);
-      border: 1px solid #222e35;
-      position: relative;
-    }
-
-    .creator-footer {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #8696a0;
-      letter-spacing: 0.5px;
-      text-align: center;
-    }
-    .creator-footer strong { color: #00a884; }
-
-    /* AUTH */
-    #auth {
-      padding: 30px; display: flex; flex-direction: column; gap: 14px;
-      width: 100%; max-width: 400px; margin: auto; background: #222e35;
-      border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 10;
-    }
-    .auth-title { text-align: center; margin-bottom: 10px; font-size: 24px; color: #00a884; }
-
-    input, select {
-      padding: 12px 16px; border-radius: 8px; border: 1px solid #2a3942;
-      outline: none; background: #2a3942; color: #fff; font-size: 15px; width: 100%;
-    }
-    input:focus, select:focus { border-color: #00a884; }
-
-    button {
-      padding: 12px; border: none; border-radius: 8px; cursor: pointer;
-      font-weight: 600; font-size: 15px; transition: 0.2s;
-    }
-    .btn-primary { background: #00a884; color: #111b21; }
-    .btn-secondary { background: transparent; color: #00a884; border: 1px solid #00a884; }
-    button:hover { opacity: 0.9; }
-
-    /* Show only one follow button inside community lists (hide auxiliary secondary buttons used for "Chatear/Seguir" duplicates) */
-    .community-content .btn-secondary { display: none; }
-
-    #main-container { display: none; width: 100%; height: 100%; }
-
-    /* SIDEBAR */
-    .sidebar { width: 360px; background: #111b21; border-right: 1px solid #222e35; display: flex; flex-direction: column; height: 100%; position: relative; }
-    .sidebar-header { padding: 12px 16px; background: #202c33; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222e35; }
-    .my-profile { display: flex; align-items: center; gap: 10px; overflow: hidden; }
-    .sidebar-actions { display: flex; gap: 6px; align-items: center; }
-    
-    .add-friend-box { padding: 10px 14px; background: #111b21; border-bottom: 1px solid #222e35; display: flex; gap: 6px; }
-    .add-friend-box input { flex: 1; padding: 8px 12px; font-size: 13px; }
-    .add-friend-box button { padding: 8px 12px; font-size: 13px; width: auto; }
-
-    .friends-list { flex: 1; overflow-y: auto; }
-    .friend-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #222e35; transition: background 0.2s; position: relative; touch-action: manipulation; -webkit-tap-highlight-color: rgba(255,255,255,0.06); }
-    .friend-item:hover, .friend-item.active { background: #2a3942; }
-
-    .followers-count { font-size: 11px; color: #e9edef; background: rgba(0, 168, 132, 0.2); padding: 2px 6px; border-radius: 10px; margin-top: 2px; display: inline-block; }
-    .status-dot { width: 11px; height: 11px; background: #8696a0; border-radius: 50%; border: 2px solid #111b21; position: absolute; bottom: 12px; left: 44px; z-index: 3; }
-    .status-dot.online { background: #1fae51; }
-
-    /* PANEL DE COMUNIDAD */
-    .community-panel { position: absolute; top: 60px; left: -100%; width: 100%; height: calc(100% - 60px); background: #111b21; z-index: 50; transition: left 0.3s ease; display: flex; flex-direction: column; border-right: 1px solid #222e35; }
-    .community-panel.open { left: 0; }
-    .community-tabs { display: flex; background: #202c33; border-bottom: 1px solid #2a3942; }
-    .tab-btn { flex: 1; padding: 12px; background: none; border: none; color: #8696a0; font-size: 11px; font-weight: bold; border-bottom: 3px solid transparent; border-radius: 0; }
-    .tab-btn.active { color: #00a884; border-bottom-color: #00a884; }
-    .community-content { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-    
-    /* TARJETAS */
-    .ranking-card { display: flex; align-items: center; gap: 12px; background: #202c33; padding: 10px 14px; border-radius: 8px; border: 1px solid #2a3942; }
-    .ranking-card.featured { border: 1px solid #00a884; background: rgba(0, 168, 132, 0.08); }
-    .podium-badge { font-weight: bold; font-size: 14px; min-width: 45px; text-align: center; padding: 2px 6px; border-radius: 6px; }
-    .rank-1 { background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; }
-    .rank-2 { background: rgba(192, 192, 192, 0.15); color: #c0c0c0; border: 1px solid #c0c0c0; }
-    .rank-3 { background: rgba(205, 127, 50, 0.15); color: #cd7f32; border: 1px solid #cd7f32; }
-    .rank-other { background: #2a3942; color: #8696a0; }
-
-    /* REGLAS STYLE */
-    .rule-item { background: #202c33; border-left: 4px solid #ef4444; padding: 10px 14px; border-radius: 4px; font-size: 13.5px; }
-    .rule-item.ok { border-left-color: #00a884; }
-
-    /* CHAT PANEL */
-    .chat-panel {
-      flex: 1; display: flex; flex-direction: column; background-color: #0b141a;
-      background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
-      background-blend-mode: overlay; opacity: 0.98; position: relative; background-size: cover; background-position: center; height: 100%;
-    }
-
-    .chat-header { padding: 10px 16px; background: #202c33; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a3942; z-index: 5; }
-    .chat-header-left { display: flex; align-items: center; gap: 12px; }
-    .chat-header-actions { display: flex; gap: 6px; }
-
-    .action-icon-btn { background: none; border: none; font-size: 18px; color: #aebac1; padding: 6px; cursor: pointer; border-radius: 50%; }
-    .action-icon-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
-
-    .avatar { width: 40px; height: 40px; background: #00a884; color: #111b21; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; background-size: cover; background-position: center; flex-shrink: 0; }
-    .my-profile .avatar { background: #53bdeb; }
-    .verified-badge { width: 16px; height: 16px; margin-left: 5px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
-
-    /* INPUT & MESSAGES */
-    .search-messages-bar { display: none; background: #202c33; padding: 8px 16px; gap: 10px; border-bottom: 1px solid #2a3942; align-items: center; }
-    .search-messages-bar input { flex: 1; padding: 6px 12px; font-size: 13px; border-radius: 6px; }
-    .pinned-msg-bar { display: none; background: #182229; border-left: 3px solid #00a884; padding: 7px 16px; justify-content: space-between; align-items: center; font-size: 13px; color: #e9edef; z-index: 4; }
-    
-    #messages { flex: 1; padding: 20px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .msg-wrapper { display: flex; flex-direction: column; width: 100%; position: relative; }
-    .msg { max-width: 75%; padding: 8px 12px 10px 12px; border-radius: 8px; font-size: 14.5px; line-height: 1.4; position: relative; cursor: pointer; box-shadow: 0 1px 1px rgba(0,0,0,0.2); }
-    .me { align-self: flex-end; background: #005c4b; color: #e9edef; border-top-right-radius: 0; }
-    .other { align-self: flex-start; background: #202c33; color: #e9edef; border-top-left-radius: 0; }
-    .msg.highlight { border: 2px solid #00a884; background: #183c36; }
-    .msg-user { font-size: 12.5px; font-weight: 600; color: #34b7f1; margin-bottom: 4px; display: flex; align-items: center; }
-    .msg-text { word-wrap: break-word; padding-right: 40px; }
-    .msg-img { max-width: 100%; max-height: 280px; border-radius: 6px; margin-top: 5px; display: block; }
-    
-    .msg-meta { position: absolute; bottom: 4px; right: 8px; display: flex; align-items: center; gap: 3px; font-size: 11px; color: rgba(233, 237, 239, 0.6); }
-    .ticks { font-size: 13px; color: #8696a0; }
-    .ticks.blue { color: #53bdeb; }
-
-    .reaction-badge { position: absolute; bottom: -10px; background: #202c33; border: 1px solid #0b141a; border-radius: 10px; padding: 1px 5px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.3); z-index: 2; }
-    .me .reaction-badge { right: 10px; }
-    .other .reaction-badge { left: 10px; }
-    .reaction-picker { position: absolute; background: #233138; border-radius: 30px; padding: 6px 10px; display: flex; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 99; animation: pop 0.15s ease-out; }
-    .reaction-option { font-size: 20px; cursor: pointer; transition: transform 0.1s; }
-    .reaction-option:hover { transform: scale(1.3); }
-
-    .input-area { display: flex; padding: 12px; gap: 10px; background: #202c33; align-items: center; position: relative; }
-    .emoji-trigger, .file-trigger, .audio-trigger { background: none; font-size: 22px; color: #8696a0; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; }
-    .audio-trigger svg { width: 22px; height: 22px; fill: #8696a0; }
-    .audio-trigger.recording svg { fill: #ef4444; animation: pulse 1s infinite; }
-    .input-area input { flex: 1; border: none; padding: 12px; font-size: 15px; border-radius: 8px; background: #2a3942; color: #fff; outline: none; }
-    .send-btn { background: none; color: #8696a0; font-size: 22px; border: none; cursor: pointer; }
-    .send-btn.active { color: #00a884; }
-    .emoji-box { display: none; position: absolute; bottom: 65px; left: 12px; background: #233138; border-radius: 8px; padding: 10px; grid-template-columns: repeat(6, 1fr); gap: 8px; z-index: 10; }
-    .emoji-box span { font-size: 22px; cursor: pointer; }
-
-    /* MODALES */
-    .settings-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px; max-width: 90%; background: #222e35; border: 1px solid #2a3942; border-radius: 12px; padding: 24px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); flex-direction: column; gap: 16px; }
-    .settings-modal h3 { color: #00a884; }
-    .settings-group { display: flex; flex-direction: column; gap: 6px; }
-    .settings-group label { font-size: 13px; color: #8696a0; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-
-    #ig-lock-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11,20,26,0.96); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; padding: 30px; }
-    .ig-box { background: #222e35; border-radius: 16px; padding: 30px; max-width: 400px; border: 1px solid #2a3942; display: flex; flex-direction: column; gap: 16px; text-align: center; }
-    .ig-btn { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: #fff; font-weight: bold; padding: 14px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-
-    .hidden-file-input { display: none; }
-    .no-chat-selected { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #222e35; color: #8696a0; padding: 20px; }
-    .blocked-notice { background: #3b2226; color: #f28b82; padding: 10px; text-align: center; font-size: 14px; }
-    .logout-btn { background: transparent; color: #ef4444; font-size: 12px; border: none; cursor: pointer; }
-    .back-btn { display: none; background: none; border: none; font-size: 20px; color: #aebac1; padding-right: 8px; cursor: pointer; }
-
-    @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
-
-    @media (max-width: 768px) {
-      body { padding: 0; }
-      .app { width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; border: none; }
-      .sidebar { width: 100%; flex: none; }
-      .chat-panel { width: 100%; flex: none; display: none; }
-      .back-btn { display: block; }
-      .app.chat-open .sidebar { display: none; }
-      .app.chat-open .chat-panel { display: flex; }
-    }
+    :root{--bg:#071018;--panel:#0f1a20;--muted:#9fb3b0;--accent:#00a884;--card:#0c1720}
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    body{margin:0;background:var(--bg);color:#e9eef0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+    .app{width:100%;max-width:980px;height:80vh;background:linear-gradient(180deg,#071018, #071826);border-radius:12px;display:flex;overflow:hidden;border:1px solid rgba(255,255,255,0.04)}
+    .sidebar{width:320px;background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:12px;border-right:1px solid rgba(255,255,255,0.03)}
+    .main{flex:1;display:flex;flex-direction:column}
+    .card{background:var(--card);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+    .center{display:flex;align-items:center;justify-content:center}
+    input,button,select,textarea{font-size:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;outline:none}
+    .muted{color:var(--muted);font-size:13px}
+    .btn{background:var(--accent);color:#08121a;border:none;cursor:pointer}
+    .small{font-size:13px;padding:6px 8px}
+    .friends{overflow:auto;flex:1;display:flex;flex-direction:column;gap:8px}
+    .friend{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer}
+    .friend:hover{background:rgba(255,255,255,0.01)}
+    .msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .msg.me{align-self:flex-end;background:#053d2b;color:#dff7ee;padding:8px;border-radius:10px;max-width:70%}
+    .msg.other{align-self:flex-start;background:#11242b;padding:8px;border-radius:10px;max-width:70%}
+    .compose{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,0.03)}
+    .compact{display:flex;gap:8px;align-items:center}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .hidden{display:none}
+    @media(max-width:800px){.app{flex-direction:column;height:94vh}.sidebar{width:100%;height:220px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.03)}}
   </style>
 </head>
 <body>
-
-<div class="app" id="appRoot">
-
-  <div id="ig-lock-screen">
-    <div class="ig-box">
-      <div style="font-size: 50px;">📸</div>
-      <h3>¡Paso Obligatorio!</h3>
-      <p style="color: #8696a0; font-size:14px;">Para activar tu cuenta, seguí al creador oficial en Instagram.</p>
-      <a href="https://www.instagram.com/zeta166_/" target="_blank" class="ig-btn" onclick="unlockAppForUser()">
-        Seguir a @zeta166_
-      </a>
-    </div>
-  </div>
-
-  <div id="auth">
-    <h2 class="auth-title">Z Chat Setup</h2>
-    <input id="profileName" type="text" placeholder="Tu Nombre de Usuario Único" />
-    <input id="email" type="email" placeholder="Correo electrónico (Validación)" />
-    <input id="password" type="password" placeholder="Contraseña" />
-    <button class="btn-primary" onclick="login()">Iniciar Sesión</button>
-    <button class="btn-secondary" onclick="register()">Registrarse</button>
-  </div>
-
-  <div id="main-container">
-    
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <div class="my-profile">
-          <div class="avatar" id="myAvatar">U</div>
+  <div class="app" id="app">
+    <div class="sidebar card" id="authPanel">
+      <h3 class="center">Z Chat - Autenticación</h3>
+      <div id="authForms">
+        <div id="registerForm">
+          <input id="regName" placeholder="Nombre público" />
+          <input id="regEmail" placeholder="Email" />
+          <input id="regPass" type="password" placeholder="Contraseña" />
+          <div class="compact">
+            <button class="btn" onclick="register()">Crear cuenta</button>
+            <button class="small" onclick="showLogin()">Ya tengo cuenta</button>
+          </div>
+        </div>
+        <div id="loginForm" class="hidden">
+          <input id="logEmail" placeholder="Email" />
+          <input id="logPass" type="password" placeholder="Contraseña" />
+          <div class="compact">
+            <button class="btn" onclick="login()">Iniciar sesión</button>
+            <button class="small" onclick="showRegister()">Registrarse</button>
+          </div>
+        </div>
+      </div>
+      <hr />
+      <div id="userPanel" class="hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-weight:600; font-size:14px; display:flex; align-items:center;" id="myProfileName"></div>
-            <div id="myFollowersLabel" class="followers-count" style="display:none;"></div>
+            <div id="meName" style="font-weight:700"></div>
+            <div id="meId" class="muted"></div>
+          </div>
+          <button class="small" onclick="logout()">Salir</button>
+        </div>
+        <div style="margin-top:8px">
+          <label class="muted">Agregar por ID público</label>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <input id="addPublicId" placeholder="ID (ej: AB3K9Z)" />
+            <button class="btn small" onclick="addContact()">Agregar</button>
           </div>
         </div>
-        <div class="sidebar-actions">
-          <button class="action-icon-btn" onclick="toggleCommunityPanel()" title="Ver Rankings y Recomendados">🏆</button>
-          <button class="action-icon-btn" onclick="openSettingsModal()" title="Ajustes">⚙️</button>
-          <button class="logout-btn" onclick="logout()">Salir</button>
-        </div>
+        <div style="margin-top:8px" class="muted">Contactos</div>
+        <div class="friends card" id="contactsList"></div>
       </div>
+    </div>
 
-      <div class="community-panel" id="communityPanel">
-        <div class="community-tabs">
-          <button class="tab-btn active" id="tab-creators-btn" onclick="switchCommunityTab('creators')">Creadores</button>
-          <button class="tab-btn" id="tab-rank-btn" onclick="switchCommunityTab('rank')">Rankings</button>
-          <button class="tab-btn" id="tab-rules-btn" onclick="switchCommunityTab('rules')">Reglas 📜</button>
-        </div>
-        <div class="community-content" id="communityContent"></div>
-        <button class="btn-secondary" style="margin: 10px; padding: 8px;" onclick="toggleCommunityPanel()">Cerrar Panel ❌</button>
-      </div>
-
-      <div class="add-friend-box">
-        <input id="friendNameInput" type="text" placeholder="Buscar por ID público (ej: AB3K9Z)..." />
-        <button class="btn-primary" onclick="addFriend()">Buscar / Agregar</button>
-      </div>
-
-      <!-- Z IA Chat quick access (appears under Add friend) -->
-      <div style="padding:10px 14px; border-top:1px solid #222e35; background:#0f1a1f; display:flex; gap:8px; align-items:center;">
-        <div style="display:flex; align-items:center; gap:10px; flex:1;">
-          <div class="avatar" id="ziaAvatar" style="width:40px; height:40px; background-image:url('/whatsapp-verificado-2.jpg'); background-size:cover; background-position:center;"></div>
-          <div style="overflow:hidden;">
-            <div style="font-weight:600; font-size:14px; color:#00a884;">Z IA Chat</div>
-            <div style="font-size:11px; color:#8696a0;">Asistente de texto — no crea imágenes</div>
-          </div>
-        </div>
+    <div class="main">
+      <div class="topbar card">
         <div>
-          <button class="btn-secondary" style="padding:8px 10px;" onclick="openZiaChat()">Abrir</button>
+          <strong id="chatToTitle">Seleccioná un contacto</strong>
+          <div id="chatToSubtitle" class="muted">Los mensajes llegan en tiempo real</div>
+        </div>
+        <div id="msgControls" class="hidden compact">
+          <button class="small" onclick="deleteChat()">Borrar</button>
+          <button class="small" id="blockBtn" onclick="toggleBlock()">Bloquear</button>
         </div>
       </div>
 
-      <div class="friends-list" id="friendsList"></div>
-    </div>
-
-    <div class="chat-panel" id="chatPanel">
-      
-      <div class="no-chat-selected" id="noChatActive">
-        <span style="font-size: 50px;">⚡</span>
-        <h3>Z Chat Pro Ultra</h3>
-        <p style="font-size:14px; margin-top:6px;">Seleccioná un amigo de la lista para empezar a chatear.</p>
-      </div>
-
-      <div id="chatContent" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
-        
-        <div class="chat-header">
-          <div class="chat-header-left">
-            <button class="back-btn" onclick="closeMobileChat()">⬅</button>
-            <div class="avatar" id="activeChatAvatar">A</div>
-            <div>
-              <div style="display: flex; align-items: center;">
-                <h4 id="activeChatName" style="font-size:15px;">Amigo Activo</h4>
-                <span id="activeChatVerified"></span>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 1px;">
-                <span id="activeChatFollowers" class="followers-count" style="display:none; align-self: flex-start;"></span>
-                <span id="activeChatStatusText" style="font-size:11px; color:#8696a0;">Offline</span>
-              </div>
-            </div>
-          </div>
-          <div class="chat-header-actions">
-            <button class="action-icon-btn" onclick="toggleSearchBar()" title="Buscar mensajes">🔍</button>
-            <button class="action-icon-btn" id="blockBtn" onclick="toggleBlockFriend()" title="Bloquear">🚫</button>
-            <button class="action-icon-btn" onclick="deleteCurrentChat()" title="Borrar Historial Completo">🗑️</button>
-          </div>
+      <div style="flex:1;display:flex;flex-direction:column">
+        <div id="messagesArea" class="msgs card">
+          <div id="noSelected" class="center muted">Ningún chat abierto</div>
         </div>
 
-        <div class="search-messages-bar" id="searchMessagesBar">
-          <input id="searchMsgInput" type="text" placeholder="Filtrar mensajes..." oninput="filterMessages(this.value)" />
-          <button class="action-icon-btn" style="font-size:14px;" onclick="toggleSearchBar()">❌</button>
-        </div>
-
-        <div class="pinned-msg-bar" id="pinnedMsgBar">
-          <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis;">
-            <span>📌 <b>Fijado:</b></span>
-            <span id="pinnedMsgText" style="color:#aebac1; font-style:italic;">Ninguno</span>
-          </div>
-          <button style="background:none; border:none; color:#ef4444; font-size:12px;" onclick="unpinMessage()">Desfijar</button>
-        </div>
-
-        <div class="blocked-notice" id="blockedNotice" style="display:none;">Usuario bloqueado.</div>
-        <div class="blocked-notice" id="banNotice" style="display:none; background:#5a181d; color:#ff8a8a;">Has sido baneado por infringir las reglas. Tiempo restante: <span id="banTimer">00:00</span></div>
-
-        <div id="messages"></div>
-
-        <div class="emoji-box" id="emojiBox">
-          <span onclick="addEmoji('😀')">😀</span><span onclick="addEmoji('😂')">😂</span>
-          <span onclick="addEmoji('😍')">😍</span><span onclick="addEmoji('👍')">👍</span>
-          <span onclick="addEmoji('🔥')">🔥</span><span onclick="addEmoji('🙏')">🙏</span>
-        </div>
-
-        <div class="input-area" id="chatInputArea">
-          <button class="emoji-trigger" onclick="toggleEmojiBox()">☺</button>
-          <button class="file-trigger" onclick="document.getElementById('chatImageInput').click()">📎</button>
-          <input type="file" id="chatImageInput" class="hidden-file-input" accept="image/*" onchange="handleChatImageUpload(this)" />
-
-
-
-          <input id="text" placeholder="Escribe un mensaje privado..." autocomplete="off" oninput="handleTypingIndicator()" />
-          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        <div id="composer" class="compose card hidden">
+          <input id="messageInput" placeholder="Escribí un mensaje..." style="flex:1" oninput="typingIndicator()" />
+          <button class="btn" onclick="sendMsg()">Enviar</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="avatar-crop-modal" style="display:none; position:fixed; inset:0; background:rgba(11,20,26,0.9); z-index:11000; align-items:center; justify-content:center; padding:18px;">
-    <div style="width:360px; max-width:92%; background:#222e35; border:1px solid #2a3942; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong style="color:#00a884;">Recortar foto de perfil</strong>
-        <button onclick="cancelAvatarCrop()" style="background:none; border:none; color:#aebac1; font-size:18px;">✖</button>
-      </div>
-      <div id="crop-frame" style="width:100%; height:280px; background:#111b21; border-radius:10px; overflow:hidden; position:relative; touch-action:none;">
-        <img id="crop-image" src="" alt="crop" style="position:absolute; top:0; left:0; transform-origin: center center; user-select:none; -webkit-user-drag:none;"/>
-        <div style="position:absolute; inset:0; pointer-events:none;">
-          <svg width="100%" height="100%"><rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.35)"></rect></svg>
-        </div>
-        <div style="position:absolute; left:50%; top:50%; width:160px; height:160px; margin-left:-80px; margin-top:-80px; border-radius:50%; box-shadow:0 0 0 9999px rgba(0,0,0,0); border:2px solid rgba(255,255,255,0.12); pointer-events:none;"></div>
-      </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input id="crop-zoom" type="range" min="0.5" max="3" step="0.01" value="1" style="flex:1;" />
-        <button class="btn-secondary" onclick="resetCrop()">Reset</button>
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button class="btn-secondary" onclick="cancelAvatarCrop()">Cancelar</button>
-        <button class="btn-primary" onclick="applyAvatarCrop()">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="settings-modal" id="settingsModal">
-    <h3>Ajustes de Z Chat</h3>
-    
-    <div class="settings-group">
-      <label>Tu Nombre de Usuario</label>
-      <input type="text" id="settingsProfileName" placeholder="Modificar tu nombre único..." />
-    </div>
-
-    <div class="settings-group">
-      <label>ID Público</label>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" id="settingsPublicId" readonly style="background:#152022; color:#aebac1; padding:10px 12px; border-radius:8px; border:1px solid #233138; flex:1;" />
-        <button class="btn-secondary" onclick="copyPublicId()" title="Copiar ID" style="padding:8px 10px;">Copiar</button>
-      </div>
-      <div style="font-size:12px; color:#8696a0; margin-top:6px;">Usá este ID para que otros te encuentren (ej: AB3K9Z)</div>
-    </div>
-
-    <div class="settings-group">
-      <label>Foto de Perfil</label>
-      <button class="btn-secondary" onclick="document.getElementById('avatarFileInput').click()">Subir foto</button>
-      <input type="file" id="avatarFileInput" class="hidden-file-input" accept="image/*" onchange="processAvatarFile(this)" />
-      <span id="avatarFileName" style="font-size:12px; color:#00a884;"></span>
-    </div>
-
-    <div class="settings-group">
-      <label>Fondo de Pantalla</label>
-      <select id="setBackgroundPreset" onchange="previewBackgroundChange(this.value)">
-        <option value="classic">WhatsApp Dark Pattern</option>
-        <option value="midnight">Azul Noche Profundo</option>
-        <option value="forest">Verde Selva Sutil</option>
-        <option value="custom">Subir personalizado...</option>
-      </select>
-      <div id="customBgGroup" style="display:none; margin-top:6px;">
-        <button class="btn-secondary" onclick="document.getElementById('bgFileInput').click()">Seleccionar Fondo</button>
-        <input type="file" id="bgFileInput" class="hidden-file-input" accept="image/*" onchange="processBgFile(this)" />
-        <span id="bgFileName" style="font-size:12px; color:#00a884;"></span>
-      </div>
-    </div>
-    
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeSettingsModal()">Cancelar</button>
-      <button class="btn-primary" onclick="saveSettings()">Guardar Todo</button>
-    </div>
-  </div>
-
-</div>
-
-<div class="creator-footer"><strong>zeta166_</strong> creador de la app</div>
-
-<div class="reaction-picker" id="reactionPicker" style="display:none;">
-  <span class="reaction-option" onclick="sendReaction('👍')">👍</span>
-  <span class="reaction-option" onclick="sendReaction('❤️')">❤️</span>
-  <span class="reaction-option" onclick="sendReaction('😂')">😂</span>
-  <button style="background:#00a884; color:#111b21; border:none; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:bold;" onclick="pinActiveMessage()">📌 Fijar</button>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, addDoc, setDoc, getDocs, doc, deleteDoc, updateDoc, query, where, onSnapshot, serverTimestamp, getDoc, writeBatch, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDq6lbgfEKfWHNCNUwWe5JSq2OnP2Tfy3o",
-  authDomain: "ggsgsd-69e39.firebaseapp.com",
-  projectId: "ggsgsd-69e39",
-  storageBucket: "ggsgsd-69e39.firebasestorage.app",
-  messagingSenderId: "585138628517",
-  appId: "1:585138628517:web:60709981b3a54821026a4c"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const VERIFIED_EMAIL = "fariaszeta7@gmail.com";
-const REQUIRED_FANS_FOR_VERIFIED = 1000000;
-const INITIAL_FANS_COUNT = 1000000;
-
-const verifiedBadgeHtml = `
-  <svg class="verified-badge" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#00a884"/>
-  </svg>
-`;
-
-/**
- * Now verification requires:
- * - email matches creator email (VERIFIED_EMAIL)
- * - and the user has at least REQUIRED_FANS_FOR_VERIFIED followers
- * We accept the second parameter as the numeric fans count when available.
- */
-function checkIsVerified(email, fansCount = 0) {
-  const fans = Number(fansCount || 0);
-  if (!email) return false;
-  if (email === VERIFIED_EMAIL) return true;
-  if (fans >= Math.max(REQUIRED_FANS_FOR_VERIFIED, 1000)) return true;
-  return false;
-}
-
-// generate a short public ID for each user (used to search/follow by ID)
-function generatePublicId() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // avoid ambiguous chars
-  let id = "";
-  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
-  return id;
-}
-
-// DOM Cache
-const appRoot = document.getElementById("appRoot");
-const authDiv = document.getElementById("auth");
-const mainContainer = document.getElementById("main-container");
-const messagesDiv = document.getElementById("messages");
-const friendsListDiv = document.getElementById("friendsList");
-const textInput = document.getElementById("text");
-const sendBtn = document.getElementById("sendBtn");
-const emojiBox = document.getElementById("emojiBox");
-const reactionPicker = document.getElementById("reactionPicker");
-const blockedNotice = document.getElementById("blockedNotice");
-const banNotice = document.getElementById("banNotice");
-const banTimerSpan = document.getElementById("banTimer");
-const chatInputArea = document.getElementById("chatInputArea");
-const blockBtn = document.getElementById("blockBtn");
-const chatPanel = document.getElementById("chatPanel");
-const audioBtn = document.getElementById("audioBtn");
-const igLockScreen = document.getElementById("ig-lock-screen");
-const communityPanel = document.getElementById("communityPanel");
-const communityContent = document.getElementById("communityContent");
-
-let currentActiveFriend = null, currentRoomId = null, activeMessageId = null, activeMessageTextContent = "";
-let unsubscribeMessages = null, unsubscribeRoomMeta = null, banInterval = null;
-let tempAvatarBase64 = "", tempBgBase64 = "", typingTimeout = null;
-// default to creators list
-let currentCommunityTab = "creators"; 
-let followsUnsub = null; // real-time listener for followers when viewing Fans tab
-
-function formatFans(num) {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " seguidores";
-}
-
-window.toggleCommunityPanel = () => {
-  communityPanel.classList.toggle("open");
-  if(communityPanel.classList.contains("open")) renderCommunityData();
-};
-
-window.switchCommunityTab = (tab) => {
-  currentCommunityTab = tab;
-  document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
-  document.getElementById(`tab-${tab}-btn`).classList.add("active");
-  renderCommunityData();
-};
-
-async function renderCommunityData() {
-  communityContent.innerHTML = `<p style="color:#8696a0; font-size:13px; text-align:center;">Cargando...</p>`;
-  try {
-    // load all users once (basic info)
-    const usersSnap = await getDocs(collection(db, "users"));
-    const usersMap = {};
-    usersSnap.forEach(d => usersMap[d.data().email] = { id: d.id, ...d.data() });
-
-    communityContent.innerHTML = "";
-
-    // 1) Fans tab: show actual users who follow the current user (from "follows" collection)
-    if (currentCommunityTab === "fans") {
-      // cleanup previous listener if any
-      if (followsUnsub) { followsUnsub(); followsUnsub = null; }
-      communityContent.innerHTML = `<p style="color:#8696a0; font-size:13px; text-align:center;">Cargando seguidores...</p>`;
-
-      // Real-time listener for followers of the current logged-in user
-      followsUnsub = onSnapshot(query(collection(db, "follows"), where("to", "==", auth.currentUser.email)), async snap => {
-        if (snap.empty) {
-          communityContent.innerHTML = `<p style="color:#8696a0; font-size:13px; text-align:center; padding:18px;">No hay seguidores todavía.</p>`;
-          return;
-        }
-        communityContent.innerHTML = "";
-        // gather follower emails
-        const followerEmails = [];
-        snap.forEach(d => followerEmails.push(d.data().from));
-        // fetch user docs for followers in a single pass
-        const allUsersSnap = await getDocs(collection(db, "users"));
-        const usersByEmail = {};
-        allUsersSnap.forEach(u => usersByEmail[u.data().email] = { id: u.id, ...u.data() });
-
-        followerEmails.forEach(followerEmail => {
-          const u = usersByEmail[followerEmail] || { name: followerEmail.split("@")[0], photoURL: "", email: followerEmail, fansCount: 0 };
-          const card = document.createElement("div"); card.classList.add("ranking-card");
-          card.style.justifyContent = "space-between";
-          // make card touch/click friendly: attach data and click handler so a single tap opens the chat
-          card.dataset.email = followerEmail;
-          card.dataset.name = u.name || followerEmail.split("@")[0];
-          card.style.touchAction = "manipulation";
-          card.addEventListener("click", () => selectFriendChat(card.dataset.name, card.dataset.email, false, u.photoURL || ''));
-
-          card.innerHTML = `
-            <div style="display:flex; gap:10px; align-items:center;">
-              <div class="avatar" style="width:40px; height:40px; ${u.photoURL ? `background-image:url('${u.photoURL}')` : ''}">${!u.photoURL ? (u.name || followerEmail).charAt(0) : ''}</div>
-              <div style="overflow:hidden;">
-                <div style="font-weight:600; font-size:14px; display:flex; align-items:center;">${u.name || followerEmail} ${checkIsVerified(u.email || followerEmail, u.fansCount || 0) ? verifiedBadgeHtml : ''}</div>
-                <div style="font-size:11px; color:#8696a0;">${formatFans((u.fansCount||0))}</div>
-              </div>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${u.name||followerEmail.split('@')[0]}','${followerEmail}', false, '${u.photoURL||''}')">Chatear</button>
-              <button class="btn-primary" id="follow-btn-${btoa(followerEmail)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${followerEmail}', this)"></button>
-            </div>
-          `;
-          communityContent.appendChild(card);
-          setTimeout(() => updateFollowButtonUI(followerEmail), 50);
-        });
-      }, e => {
-        console.error("Followers listener error", e);
-      });
-
-      return;
-    }
-
-    // 2) Rankings: same as before, but include follow button
-    if (currentCommunityTab === "creators") {
-      // Creadores: mostrar primero verificados y luego top por seguidores
-      const allUsers = Object.values(usersMap);
-      const creatorEmail = VERIFIED_EMAIL;
-
-      // Always show the official creator first (use usersMap entry when available, otherwise create a fallback card)
-      const creatorDoc = allUsers.find(u => u.email === creatorEmail);
-      if (creatorDoc) {
-        const u = creatorDoc;
-        const card = document.createElement("div"); card.classList.add("ranking-card","featured");
-        card.dataset.email = u.email || "";
-        card.dataset.name = u.name || "";
-        card.style.touchAction = "manipulation";
-        // creator card: prevent opening chat directly; clicking the card will follow instead of chat
-        card.addEventListener("click", () => toggleFollow(u.email));
-        card.innerHTML = `
-          <div class="avatar" style="width:44px; height:44px; background-image:url('${u.photoURL||''}'); font-size:14px;">${!u.photoURL? (u.name||'').charAt(0):''}</div>
-          <div style="flex:1;">
-            <div style="font-weight:700; font-size:14px; color:#00a884; display:flex; align-items:center;">${u.name} ${verifiedBadgeHtml}</div>
-            <div style="font-size:11px; color:#e9edef;">${formatFans(u.fansCount || INITIAL_FANS_COUNT)}</div>
-            <div style="font-size:10px; color:#00a884; font-weight:600; margin-top:2px;">Creador Recomendado ✨</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)">Seguir</button>
-            <button class="btn-primary" id="follow-btn-${btoa(u.email)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)"></button>
-          </div>
-        `;
-        communityContent.appendChild(card);
-        setTimeout(() => updateFollowButtonUI(u.email), 50);
-      } else {
-        // Fallback: show a static zeta166 card even if not in the users collection yet
-        const fallbackEmail = creatorEmail;
-        const fallbackName = "zeta166_";
-        const card = document.createElement("div"); card.classList.add("ranking-card","featured");
-        card.dataset.email = fallbackEmail;
-        card.dataset.name = fallbackName;
-        card.style.touchAction = "manipulation";
-        // fallback creator card should not open chat; only allow following
-        card.addEventListener("click", () => toggleFollow(fallbackEmail));
-        card.innerHTML = `
-          <div class="avatar" style="width:44px; height:44px; background-image:url(''); font-size:14px;">Z</div>
-          <div style="flex:1;">
-            <div style="font-weight:700; font-size:14px; color:#00a884; display:flex; align-items:center;">${fallbackName} ${verifiedBadgeHtml}</div>
-            <div style="font-size:11px; color:#e9edef;">${formatFans(INITIAL_FANS_COUNT)}</div>
-            <div style="font-size:10px; color:#00a884; font-weight:600; margin-top:2px;">Creador Oficial Recomendado ✨</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${fallbackEmail}', this)">Seguir</button>
-            <button class="btn-primary" id="follow-btn-${btoa(fallbackEmail)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${fallbackEmail}', this)"></button>
-          </div>
-        `;
-        communityContent.appendChild(card);
-        setTimeout(() => updateFollowButtonUI(fallbackEmail), 50);
-      }
-
-      // verified users including creator (creator already displayed above)
-      const verifiedUsers = allUsers.filter(u => checkIsVerified(u.email, u.fansCount) && u.email !== creatorEmail).sort((a,b) => (b.fansCount||0) - (a.fansCount||0));
-      if (verifiedUsers.length === 0) {
-        if (communityContent.children.length === 0) {
-          communityContent.innerHTML = `<p style="color:#8696a0; font-size:13px; text-align:center; padding:18px;">No hay creadores verificados aún.</p>`;
-        }
-      } else {
-        verifiedUsers.forEach(u => {
-          const card = document.createElement("div"); card.classList.add("ranking-card","featured");
-          card.dataset.email = u.email || "";
-          card.dataset.name = u.name || "";
-          card.style.touchAction = "manipulation";
-          card.addEventListener("click", () => selectFriendChat(card.dataset.name, card.dataset.email, false, u.photoURL || ''));
-          card.innerHTML = `
-            <div class="avatar" style="width:44px; height:44px; background-image:url('${u.photoURL||''}'); font-size:14px;">${!u.photoURL? (u.name||'').charAt(0):''}</div>
-            <div style="flex:1;">
-              <div style="font-weight:700; font-size:14px; color:#00a884; display:flex; align-items:center;">${u.name} ${verifiedBadgeHtml}</div>
-              <div style="font-size:11px; color:#e9edef;">${formatFans(u.fansCount || 0)}</div>
-              <div style="font-size:10px; color:#00a884; font-weight:600; margin-top:2px;">Creador Recomendado ✨</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${u.name}','${u.email}', false, '${u.photoURL||''}')">Chatear</button>
-              <button class="btn-primary" id="follow-btn-${btoa(u.email)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)"></button>
-            </div>
-          `;
-          communityContent.appendChild(card);
-          setTimeout(() => updateFollowButtonUI(u.email), 50);
-        });
-      }
-
-      // luego los creadores con más seguidores (no verificados) -> top 10
-      const nonVerified = allUsers.filter(u => !checkIsVerified(u.email, u.fansCount)).sort((a,b) => (b.fansCount||0) - (a.fansCount||0)).slice(0,10);
-      if(nonVerified.length > 0) {
-        const header = document.createElement("div"); header.style.cssText = "margin-top:8px;color:#8696a0;font-size:12px;font-weight:600;"; header.innerText = "Top por seguidores";
-        communityContent.appendChild(header);
-        nonVerified.forEach(u => {
-          const card = document.createElement("div"); card.classList.add("ranking-card");
-          card.dataset.email = u.email || "";
-          card.dataset.name = u.name || "";
-          card.style.touchAction = "manipulation";
-          card.addEventListener("click", () => selectFriendChat(card.dataset.name, card.dataset.email, false, u.photoURL || ''));
-          card.innerHTML = `
-            <div class="avatar" style="width:40px; height:40px; background-image:url('${u.photoURL || ''}'); font-size:13px;">${!u.photoURL? (u.name||'').charAt(0):''}</div>
-            <div style="flex:1;">
-              <div style="font-weight:600; font-size:14px;">${u.name}</div>
-              <div style="font-size:11px; color:#8696a0;">${formatFans(u.fansCount || 0)}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${u.name}','${u.email}', false, '${u.photoURL||''}')">Chatear</button>
-              <button class="btn-primary" id="follow-btn-${btoa(u.email)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)"></button>
-            </div>
-          `;
-          communityContent.appendChild(card);
-          setTimeout(() => updateFollowButtonUI(u.email), 50);
-        });
-      }
-      return;
-    }
-
-    if (currentCommunityTab === "rank") {
-      const usersList = Object.values(usersMap).sort((a,b) => (b.fansCount||0) - (a.fansCount||0));
-      usersList.forEach((u, index) => {
-        const position = index + 1;
-        // simplified ranking card: remove podium badge graphic, show position and name
-        const card = document.createElement("div"); card.classList.add("ranking-card");
-        card.dataset.email = u.email || "";
-        card.dataset.name = u.name || "";
-        card.style.touchAction = "manipulation";
-        card.addEventListener("click", () => selectFriendChat(card.dataset.name, card.dataset.email, false, u.photoURL || ''));
-
-        card.innerHTML = `
-          <div style="display:flex; gap:12px; align-items:center; width:100%;">
-            <div class="podium-badge rank-other" style="min-width:45px; font-weight:700;">#${position}</div>
-            <div style="flex:1; overflow:hidden; display:flex; align-items:center; justify-content:space-between;">
-              <div style="overflow:hidden;">
-                <div style="font-weight:600; font-size:14px; display:flex; align-items:center;">${u.name} ${checkIsVerified(u.email, u.fansCount) ? verifiedBadgeHtml : ''}</div>
-                <div style="font-size:11px; color:#8696a0;">${formatFans(u.fansCount || 0)}</div>
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${u.name}','${u.email}', false, '${u.photoURL||''}')">Chatear</button>
-                <button class="btn-primary" id="follow-btn-${btoa(u.email)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)"></button>
-              </div>
-            </div>
-          </div>
-        `;
-        communityContent.appendChild(card);
-        setTimeout(() => updateFollowButtonUI(u.email), 50);
-      });
-      return;
-    }
-
-    // 3) Verify / Recomendados: ensure the official verified creator appears first, then other verified / recommended creators
-    if (currentCommunityTab === "verify") {
-      communityContent.innerHTML = '';
-
-      // Try to include the official creator account first (if present in users collection)
-      const creatorEmail = VERIFIED_EMAIL;
-      const creatorDoc = Object.values(usersMap).find(u => u.email === creatorEmail);
-      if (creatorDoc) {
-        const u = creatorDoc;
-        const card = document.createElement("div"); card.classList.add("ranking-card","featured");
-        // creator is followable only; clicking chat is disabled
-        card.addEventListener("click", () => toggleFollow(u.email));
-        card.innerHTML = `
-          <div class="avatar" style="width:36px; height:36px; background-image:url('${u.photoURL||''}'); font-size:14px;">${!u.photoURL? (u.name||'').charAt(0):''}</div>
-          <div style="flex:1;">
-            <div style="font-weight:700; font-size:14px; color:#00a884; display:flex; align-items:center;">${u.name} ${verifiedBadgeHtml}</div>
-            <div style="font-size:11px; color:#e9edef;">${formatFans(u.fansCount || INITIAL_FANS_COUNT)}</div>
-            <div style="font-size:10px; color:#00a884; font-weight:600; margin-top:2px;">Creador Oficial Recomendado ✨</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)">Seguir</button>
-            <button class="btn-primary" id="follow-btn-${btoa(u.email)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)"></button>
-          </div>
-        `;
-        communityContent.appendChild(card);
-        setTimeout(() => updateFollowButtonUI(u.email), 50);
-      }
-
-      // then show all verified users (excluding the creator already shown)
-      const verifiedUsers = Object.values(usersMap).filter(u => checkIsVerified(u.email, u.fansCount) && u.email !== creatorEmail);
-      verifiedUsers.forEach(u => {
-        const card = document.createElement("div"); card.classList.add("ranking-card","featured");
-        card.innerHTML = `
-          <div class="avatar" style="width:36px; height:36px; background-image:url('${u.photoURL||''}'); font-size:14px;">${!u.photoURL? (u.name||'').charAt(0):''}</div>
-          <div style="flex:1;">
-            <div style="font-weight:700; font-size:14px; color:#00a884; display:flex; align-items:center;">${u.name} ${verifiedBadgeHtml}</div>
-            <div style="font-size:11px; color:#e9edef;">${formatFans(u.fansCount || INITIAL_FANS_COUNT)}</div>
-            <div style="font-size:10px; color:#00a884; font-weight:600; margin-top:2px;">Creador Recomendado ✨</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${u.name}','${u.email}', false, '${u.photoURL||''}')">Chatear</button>
-            <button class="btn-primary" id="follow-btn-${btoa(u.email)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)"></button>
-          </div>
-        `;
-        communityContent.appendChild(card);
-        setTimeout(() => updateFollowButtonUI(u.email), 50);
-      });
-
-      // then other creators with > 1k fans (non-verified)
-      Object.values(usersMap).forEach(u => {
-        if (checkIsVerified(u.email, u.fansCount)) return;
-        if ((u.fansCount || 0) >= 1000) {
-          const card = document.createElement("div"); card.classList.add("ranking-card");
-          // tappable card data + click handler
-          card.dataset.email = u.email || "";
-          card.dataset.name = u.name || "";
-          card.style.touchAction = "manipulation";
-          card.addEventListener("click", () => selectFriendChat(card.dataset.name, card.dataset.email, false, u.photoURL || ''));
-
-          card.innerHTML = `
-            <div class="avatar" style="width:32px; height:32px; background-image:url('${u.photoURL || ''}'); font-size:12px;">${!u.photoURL? (u.name||'').charAt(0):''}</div>
-            <div style="flex:1;">
-              <div style="font-weight:600; font-size:14px; display:flex; align-items:center;">${u.name}</div>
-              <div style="font-size:11px; color:#8696a0;">${formatFans(u.fansCount || 0)}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${u.name}','${u.email}', false, '${u.photoURL||''}')">Chatear</button>
-              <button class="btn-primary" id="follow-btn-${btoa(u.email)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${u.email}', this)"></button>
-            </div>
-          `;
-          communityContent.appendChild(card);
-          setTimeout(() => updateFollowButtonUI(u.email), 50);
-        }
-      });
-      return;
-    }
-
-    // rules unchanged
-    if (currentCommunityTab === "rules") {
-      communityContent.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <h4 style="color:#ef4444; font-size:14px;">🚫 ACCIONES PROHIBIDAS (BAN AUTOMÁTICO)</h4>
-          <div class="rule-item"><b>1. Contenido Explícito / Hot / Porno:</b> Enviar cualquier texto subido de tono o imágenes con desnudos aplicará un baneo de 10 minutos inmediatamente.</div>
-          <div class="rule-item"><b>2. Suplantación de Identidad:</b> Intentar llamarse ZETA166 sin ser el dueño legítimo anulará tu cuenta.</div>
-          <div class="rule-item"><b>3. Toxicidad en Chats:</b> Insultos graves causarán la eliminación de tus contactos.</div>
-          <h4 style="color:#00a884; font-size:14px; margin-top:10px;">✅ BUENAS PRÁCTICAS</h4>
-          <div class="rule-item ok">Chatea de forma fluida, compartí capturas y subí en el ranking acumulando fans reales.</div>
-        </div>
-      `;
-    }
-  } catch(e) { console.error(e); }
-}
-
-window.register = async () => {
-  const name = document.getElementById("profileName").value.trim();
-  const mail = document.getElementById("email").value.trim().toLowerCase();
-  const pass = document.getElementById("password").value.trim();
-  if(!name || !mail || !pass) return alert("Completa todos los campos.");
-  
-  try {
-    const nameCheck = await getDocs(query(collection(db, "users"), where("name", "==", name)));
-    if(!nameCheck.empty) return alert("Nombre de usuario ya ocupado.");
-
-    const uc = await createUserWithEmailAndPassword(auth, mail, pass);
-    await updateProfile(uc.user, { displayName: name });
-    const initialFans = (mail === VERIFIED_EMAIL) ? INITIAL_FANS_COUNT : 0;
-
-    // create a short public ID to allow others to find you by ID
-    const publicId = generatePublicId();
-
-    // If this is the official creator account, mark as followed and give initial fans
-    const isCreator = (mail === VERIFIED_EMAIL);
-    await setDoc(doc(db, "users", uc.user.uid), { 
-      name: name, email: mail, photoURL: "", bgPreset: "classic", customBg: "", status: "online", followedIg: isCreator, fansCount: initialFans, banUntil: null, publicId 
-    });
-    alert(`Registrado. Tu ID público: ${publicId}`);
-  } catch (e) { alert(e.message); }
-};
-
-window.login = async () => {
-  const mail = document.getElementById("email").value.trim().toLowerCase();
-  const pass = document.getElementById("password").value.trim();
-  try { await signInWithEmailAndPassword(auth, mail, pass); } catch (e) { alert("Credenciales inválidas"); }
-};
-
-window.unlockAppForUser = async () => {
-  if (!auth.currentUser) return;
-  try {
-    const qSnap = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-    if(!qSnap.empty) {
-      const userRef = doc(db, "users", qSnap.docs[0].id);
-      await updateDoc(userRef, { followedIg: true });
-
-      const zetaSnap = await getDocs(query(collection(db, "users"), where("email", "==", VERIFIED_EMAIL)));
-      if (!zetaSnap.empty) {
-        const zetaRef = doc(db, "users", zetaSnap.docs[0].id);
-        const currentFans = zetaSnap.docs[0].data().fansCount || INITIAL_FANS_COUNT;
-        await updateDoc(zetaRef, { fansCount: currentFans + 1 });
-      }
-    }
-    igLockScreen.style.display = "none";
-  } catch (e) { console.error(e); }
-};
-
-window.logout = async () => {
-  // Save status, current settings and current chat draft before signing out
-  try {
-    await saveDraftAndSettings();
-  } catch (e) { console.error("Failed saving on logout:", e); }
-
-  if(auth.currentUser) {
-    const myUserDoc = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-    if(!myUserDoc.empty) await updateDoc(doc(db, "users", myUserDoc.docs[0].id), { status: "offline" });
-  }
-  await signOut(auth);
-  // reload to ensure a clean state
-  location.reload();
-};
-
-window.addFriend = async () => {
-  // Now searching by public ID instead of username
-  const publicId = document.getElementById("friendNameInput").value.trim().toUpperCase();
-  if(!publicId) return alert("Ingresá un ID válido.");
-  try {
-    const userQuery = await getDocs(query(collection(db, "users"), where("publicId", "==", publicId)));
-    if(userQuery.empty) return alert("No se encontró ningún usuario con ese ID.");
-    const targetUserData = userQuery.docs[0].data();
-    const friendKey = btoa(targetUserData.name);
-    await setDoc(doc(db, "users", auth.currentUser.uid, "friends", friendKey), { 
-      name: targetUserData.name, email: targetUserData.email, addedAt: serverTimestamp(), blocked: false 
-    });
-    document.getElementById("friendNameInput").value = "";
-    alert(`Agregado: ${targetUserData.name}`);
-  } catch (e) { console.error(e); alert("No se pudo agregar el contacto."); }
-};
-
-window.closeMobileChat = () => appRoot.classList.remove("chat-open");
-
-window.selectFriendChat = async (fName, fEmail, isBlocked, avatarUrl) => {
-  // creators (including the official creator) are now messageable like any other account
-  currentActiveFriend = { name: fName, email: fEmail, blocked: isBlocked };
-  const sortedNames = [auth.currentUser.displayName, fName].sort();
-  currentRoomId = `room_${sortedNames[0]}_${sortedNames[1]}`;
-
-  appRoot.classList.add("chat-open");
-  document.getElementById("noChatActive").style.display = "none";
-  document.getElementById("chatContent").style.display = "flex";
-  document.getElementById("activeChatName").innerText = fName;
-  
-  const headerAvatar = document.getElementById("activeChatAvatar");
-  if(avatarUrl) { headerAvatar.innerText = ""; headerAvatar.style.backgroundImage = `url('${avatarUrl}')`; headerAvatar.style.backgroundSize = "cover"; headerAvatar.style.backgroundPosition = "center"; }
-  else { headerAvatar.style.backgroundImage = "none"; headerAvatar.innerText = fName.charAt(0).toUpperCase(); headerAvatar.style.backgroundSize = ""; headerAvatar.style.backgroundPosition = ""; }
-
-  // fetch friend's fansCount to determine verification badge accurately
-  try {
-    const q = query(collection(db, "users"), where("name", "==", fName));
-    const snap = await getDocs(q);
-    const friendData = (!snap.empty) ? snap.docs[0].data() : { fansCount: 0 };
-    document.getElementById("activeChatVerified").innerHTML = checkIsVerified(fEmail, friendData.fansCount || 0) ? verifiedBadgeHtml : "";
-  } catch (e) {
-    document.getElementById("activeChatVerified").innerHTML = "";
-  }
-
-  document.getElementById("searchMessagesBar").style.display = "none";
-
-  checkBanStatus();
-  document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
-  document.getElementById(`friend-${btoa(fName)}`)?.classList.add('active');
-
-  // update block button to reflect the selected contact
-  updateBlockButtonUI();
-
-  loadPrivateMessages();
-  listenRoomMetaAndStatus();
-};
-
-async function checkBanStatus() {
-  const myUserDoc = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-  if(myUserDoc.empty) return;
-  const uData = myUserDoc.docs[0].data();
-  
-  if (uData.banUntil && uData.banUntil.toMillis() > Date.now()) {
-    activateBanUI(uData.banUntil.toMillis());
-  } else {
-    disableBanUI();
-  }
-}
-
-function activateBanUI(targetTimestamp) {
-  banNotice.style.display = "block"; blockedNotice.style.display = "none";
-  chatInputArea.style.opacity = "0.3"; textInput.disabled = true;
-  if(banInterval) clearInterval(banInterval);
-  
-  banInterval = setInterval(() => {
-    const remaining = targetTimestamp - Date.now();
-    if (remaining <= 0) {
-      clearInterval(banInterval); disableBanUI();
-    } else {
-      const mins = Math.floor(remaining / 60000); const secs = Math.floor((remaining % 60000) / 1000);
-      banTimerSpan.innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-    }
-  }, 1000);
-}
-
-function disableBanUI() {
-  if(banInterval) clearInterval(banInterval);
-  banNotice.style.display = "none";
-  if(currentActiveFriend && currentActiveFriend.blocked) {
-    blockedNotice.style.display = "block"; chatInputArea.style.opacity = "0.4"; textInput.disabled = true;
-  } else {
-    chatInputArea.style.opacity = "1"; textInput.disabled = false;
-  }
-}
-
-function listenRoomMetaAndStatus() {
-  if (unsubscribeRoomMeta) unsubscribeRoomMeta();
-  unsubscribeRoomMeta = onSnapshot(doc(db, "rooms", currentRoomId), docSnap => {
-    if(docSnap.exists()) {
-      const data = docSnap.data();
-      document.getElementById("pinnedMsgBar").style.display = data.pinnedText ? "flex" : "none";
-      document.getElementById("pinnedMsgText").innerText = data.pinnedText || "";
-      
-      const typingUser = data.typingUser || "";
-      if(typingUser && typingUser !== auth.currentUser.displayName) {
-        document.getElementById("activeChatStatusText").innerText = "Escribiendo...";
-        document.getElementById("activeChatStatusText").style.color = "#00a884";
-      } else { fetchFriendOnlineStatus(); }
-    } else { document.getElementById("pinnedMsgBar").style.display = "none"; fetchFriendOnlineStatus(); }
-  });
-}
-
-async function fetchFriendOnlineStatus() {
-  const q = query(collection(db, "users"), where("name", "==", currentActiveFriend.name));
-  const snap = await getDocs(q);
-  if(!snap.empty) {
-    const data = snap.docs[0].data(); const status = data.status || "offline"; const fans = data.fansCount || 0;
-    const statusTxt = document.getElementById("activeChatStatusText");
-    statusTxt.innerText = status === "online" ? "En línea" : "Offline";
-    statusTxt.style.color = status === "online" ? "#1fae51" : "#8696a0";
-
-    const activeChatFollowers = document.getElementById("activeChatFollowers");
-    // fix: pass fans count to checkIsVerified so verified badge and follower count display correctly
-    if (checkIsVerified(data.email, fans) || fans > 0) {
-      activeChatFollowers.innerText = formatFans(fans); activeChatFollowers.style.display = "inline-block";
-    } else { activeChatFollowers.style.display = "none"; }
-  }
-}
-
-window.handleTypingIndicator = async () => {
-  if(!currentRoomId) return;
-  sendBtn.classList.toggle("active", textInput.value.trim() !== "");
-  await setDoc(doc(db, "rooms", currentRoomId), { typingUser: auth.currentUser.displayName }, { merge: true });
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(async () => {
-    await setDoc(doc(db, "rooms", currentRoomId), { typingUser: "" }, { merge: true });
-  }, 1800);
-};
-
-window.toggleSearchBar = () => {
-  const bar = document.getElementById("searchMessagesBar");
-  bar.style.display = bar.style.display === "flex" ? "none" : "flex";
-  if(bar.style.display === "none") filterMessages("");
-};
-
-window.filterMessages = (keyword) => {
-  const cleanKeyword = keyword.toLowerCase().trim();
-  document.querySelectorAll(".msg-wrapper").forEach(wrapper => {
-    const textNode = wrapper.querySelector(".msg-text"); if(!textNode) return;
-    if(cleanKeyword === "" || textNode.innerText.toLowerCase().includes(cleanKeyword)) {
-      wrapper.querySelector(".msg").classList.toggle("highlight", cleanKeyword !== ""); wrapper.style.display = "flex";
-    } else { wrapper.style.display = "none"; }
-  });
-};
-
-window.pinActiveMessage = async () => {
-  if(!currentRoomId || !activeMessageTextContent) return;
-  await setDoc(doc(db, "rooms", currentRoomId), { pinnedText: activeMessageTextContent }, { merge: true });
-  reactionPicker.style.display = "none";
-};
-
-window.unpinMessage = async () => {
-  if(!currentRoomId) return;
-  await setDoc(doc(db, "rooms", currentRoomId), { pinnedText: "" }, { merge: true });
-};
-
-
-
-window.handleChatImageUpload = (input) => {
-  const file = input.files[0]; if(!file) return;
-  if (!currentRoomId) return alert("Seleccioná un chat primero.");
-  const reader = new FileReader();
-  reader.onloadend = async () => {
-    try {
-      const dataUrl = reader.result;
-
-      // optimistic preview: render immediately while the upload/save completes
-      const tempId = `temp-img-${Date.now()}`;
-      renderSingleMessage({
-        id: tempId,
-        text: "",
-        imageUrl: dataUrl,
-        audioUrl: "",
-        user: auth.currentUser.email,
-        senderName: auth.currentUser.displayName,
-        roomId: currentRoomId,
-        createdAt: new Date(),
-        reaction: ""
-      }, true);
-
-      // persist to Firestore (correct parameter order)
-      await saveMessageToFirestore("", dataUrl);
-      input.value = "";
-    } catch (e) {
-      console.error("Image upload failed:", e);
-      alert("No se pudo enviar la imagen.");
-    }
-  };
-  reader.readAsDataURL(file);
-};
-
-
-
-async function checkContentAndTriggerBan(text) {
-  const blackList = ["porno", "porn", "xnxx", "hentai", "hot", "desnuda", "desnudo", "tetas", "coger"];
-  const clean = text.toLowerCase();
-  const match = blackList.some(word => clean.includes(word));
-  
-  if (match) {
-    const myUserDoc = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-    if(!myUserDoc.empty) {
-      const tenMinutes = Date.now() + (10 * 60 * 1000);
-      const futureDate = new Date(tenMinutes);
-      await updateDoc(doc(db, "users", myUserDoc.docs[0].id), { banUntil: futureDate });
-      activateBanUI(tenMinutes);
-    }
-    return true;
-  }
-  return false;
-}
-
-window.sendMessage = async () => {
-  const txt = textInput.value.trim();
-  if (!currentRoomId) return alert("Seleccioná un chat primero.");
-  if (currentActiveFriend && currentActiveFriend.blocked) return alert("No podés enviar mensajes a este usuario (bloqueado).");
-
-  // Check content first (do not clear input before ban check)
-  const wasBanned = await checkContentAndTriggerBan(txt);
-  if (wasBanned) return;
-
-  if (!txt) return; // nothing to send (images/audios use their own handlers)
-
-  try {
-    // optimistic UI: render message locally immediately
-    const tempId = `temp-${Date.now()}`;
-    renderSingleMessage({
-      id: tempId,
-      text: txt,
-      imageUrl: "",
-      audioUrl: "",
-      user: auth.currentUser.email,
-      senderName: auth.currentUser.displayName,
-      roomId: currentRoomId,
-      createdAt: new Date(),
-      reaction: ""
-    }, true);
-
-    sendBtn.classList.remove("active");
-    textInput.value = "";
-
-    // persist to Firestore; real listener will replace/append authoritative message
-    await saveMessageToFirestore(txt, "");
-    await setDoc(doc(db, "rooms", currentRoomId), { typingUser: "" }, { merge: true });
-  } catch (e) {
-    console.error("sendMessage failed:", e);
-    alert("No se pudo enviar el mensaje.");
-  }
-};
-
-async function saveMessageToFirestore(text, imageUrl) {
-  try {
-    // ensure there's a room id and a room doc so listeners are consistent
-    if (!currentRoomId) throw new Error("No room selected.");
-    await setDoc(doc(db, "rooms", currentRoomId), { updatedAt: serverTimestamp() }, { merge: true });
-
-    // Save the user's message (support text, image or audio)
-    const payload = {
-      text: text || "",
-      imageUrl: imageUrl || "",
-      user: auth.currentUser ? auth.currentUser.email : "anonymous",
-      senderName: auth.currentUser ? auth.currentUser.displayName : "Anon",
-      roomId: currentRoomId,
-      createdAt: serverTimestamp(),
-      reaction: ""
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDq6lbgfEKfWHNCNUwWe5JSq2OnP2Tfy3o",
+      authDomain: "ggsgsd-69e39.firebaseapp.com",
+      projectId: "ggsgsd-69e39",
+      storageBucket: "ggsgsd-69e39.firebasestorage.app",
+      messagingSenderId: "585138628517",
+      appId: "1:585138628517:web:60709981b3a54821026a4c"
     };
-    await addDoc(collection(db, "messages"), payload);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // Force a refresh / ensure listener sees the new message immediately (helps with realtime display)
-    try { loadPrivateMessages(); } catch(e) { /* best-effort */ }
+    // UI refs
+    const authPanel = document.getElementById("authPanel");
+    const authForms = document.getElementById("authForms");
+    const registerForm = document.getElementById("registerForm");
+    const loginForm = document.getElementById("loginForm");
+    const userPanel = document.getElementById("userPanel");
+    const meName = document.getElementById("meName");
+    const meId = document.getElementById("meId");
+    const contactsList = document.getElementById("contactsList");
+    const messagesArea = document.getElementById("messagesArea");
+    const composer = document.getElementById("composer");
+    const messageInput = document.getElementById("messageInput");
+    const chatToTitle = document.getElementById("chatToTitle");
+    const chatToSubtitle = document.getElementById("chatToSubtitle");
+    const noSelected = document.getElementById("noSelected");
+    const msgControls = document.getElementById("msgControls");
+    const blockBtn = document.getElementById("blockBtn");
 
-    // If this is the Z IA Chat room (bot), generate a local bot reply (text-only) after a short delay
-    // Use active friend identity for bot detection so replies reliably work
-    if (currentActiveFriend && currentActiveFriend.email === "zia@local") {
-      // Build a simple context string describing what user sent
-      const userTextRaw = (text || "").trim();
-      const userText = userTextRaw.toLowerCase();
-      let reply = "Hola, soy Z IA. ¿En qué puedo ayudarte?";
+    let currentUserDoc = null;
+    let currentChat = null; // {id, name, email, blocked}
+    let messagesUnsub = null;
+    let typingTimeout = null;
 
-      if (imageUrl) {
-        reply = "He recibido tu imagen. Puedo comentar sobre ella en texto, pero no puedo generar nuevas imágenes.";
-      } else if (!userText) {
-        reply = "Escribí algo para que pueda responderte.";
-      } else if (userText.includes("hola") || userText.includes("buenas")) {
-        reply = "¡Hola! ¿Cómo estás?";
-      } else if (userText.includes("gracias")) {
-        reply = "De nada, para eso estoy 🙂";
-      } else if (userText.includes("imagen") || userText.includes("crear imagen") || userText.includes("generar imagen")) {
-        reply = "Lo siento, no puedo crear imágenes — solo puedo responder con texto.";
-      } else if (userText.includes("ayuda") || userText.includes("como") || userText.includes("cómo")) {
-        reply = "Puedo responder preguntas y conversar. Evita pedirme que genere imágenes o contenido explícito.";
-      } else if (userText.length < 40) {
-        // Short echo + offer
-        reply = `Entiendo: "${userTextRaw}". ¿Querés que amplíe o lo explique más?`;
-      } else {
-        // Longer input -> summarize-style reply
-        reply = `Recibí tu mensaje: "${userTextRaw}". ¿Querés que lo resuma o que te de una respuesta detallada?`;
-      }
-
-      // Slight delay to feel natural
-      setTimeout(async () => {
-        try {
-          await addDoc(collection(db, "messages"), {
-            text: reply,
-            imageUrl: "",
-            audioUrl: "",
-            user: "zia@local",
-            senderName: "Z IA",
-            roomId: currentRoomId,
-            createdAt: serverTimestamp(),
-            reaction: ""
-          });
-        } catch (er) { console.error("Z IA reply failed", er); }
-      }, 700);
-    }
-  } catch (e) {
-    console.error("saveMessageToFirestore error:", e);
-    throw e;
-  }
-}
-
-/* Render a single message object into the messages container.
-   If optimistic is true we mark it visually but real messages from Firestore will still be appended by the listener. */
-function renderSingleMessage(m, optimistic = false) {
-  try {
-    const wrapper = document.createElement("div"); wrapper.classList.add("msg-wrapper");
-    // give wrapper a stable id so optimistic entries can be identified if needed
-    if (m.id) wrapper.id = `msg-${m.id}`;
-
-    const div = document.createElement("div"); div.classList.add("msg"); const isMe = m.user === auth.currentUser.email; div.classList.add(isMe ? "me" : "other");
-    // for optimistic messages, attach a temporary onclick payload safely
-    div.setAttribute("onclick", `openReactionMenu(event, '${m.id}', \`${(m.text||'Archivo').replace(/`/g,'')}\`)`);
-
-    const timeStr = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (m.createdAt instanceof Date ? m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    let bodyHtml = `<div class="msg-text">${m.text}</div>`;
-    if (m.imageUrl) bodyHtml = `<img src="${m.imageUrl}" class="msg-img" alt="img" />`;
-
-    // Build meta UI: if optimistic, show "Enviando..." placeholder; if confirmed and from me show blue ticks
-    let metaHtml = `<span>${timeStr}</span>`;
-    if (isMe) {
-      if (optimistic) metaHtml += ` <span class="ticks" style="color:#d1d5db; font-size:12px; margin-left:6px;">Enviando...</span>`;
-      else metaHtml += ` <span class="ticks blue">✓✓</span>`;
+    function generatePublicId(){
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let s="";
+      for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+      return s;
     }
 
-    div.innerHTML = `
-      <div class="msg-user"><span>${m.senderName}</span>${checkIsVerified(m.user) ? verifiedBadgeHtml : ""}</div>
-      ${bodyHtml}
-      <div class="msg-meta">${metaHtml}</div>
-      ${m.reaction ? `<div class="reaction-badge">${m.reaction}</div>` : ''}
-    `;
+    // Simple UI toggles
+    window.showLogin = ()=>{ registerForm.classList.add("hidden"); loginForm.classList.remove("hidden"); };
+    window.showRegister = ()=>{ loginForm.classList.add("hidden"); registerForm.classList.remove("hidden"); };
 
-    if (optimistic) {
-      // give it a slight visual hint that it's pending
-      div.style.opacity = "0.85";
-    }
-    wrapper.appendChild(div);
-    messagesDiv.appendChild(wrapper);
-    // scroll to bottom (smooth)
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  } catch (e) {
-    console.error("renderSingleMessage error", e);
-  }
-}
-
-function loadPrivateMessages() {
-  if (unsubscribeMessages) unsubscribeMessages();
-  // ensure messages are listened in chronological order so newly sent messages appear reliably
-  const q = query(collection(db, "messages"), where("roomId", "==", currentRoomId), orderBy("createdAt", "asc"));
-  unsubscribeMessages = onSnapshot(q, snapshot => {
-    let rawMessages = []; snapshot.forEach(docSnap => { rawMessages.push({ id: docSnap.id, ...docSnap.data() }); });
-    rawMessages.sort((a, b) => (a.createdAt?.toMillis?.() || Date.now()) - (b.createdAt?.toMillis?.() || Date.now()));
-    messagesDiv.innerHTML = "";
-    rawMessages.forEach(m => {
-      // reuse the renderer for consistent UI; these are authoritative messages (not optimistic)
-      renderSingleMessage(m, false);
-    });
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  });
-}
-
-async function loadFriendsSidebar() {
-  // Use real-time snapshot for the friends collection but build the sidebar after enriching with last-message times.
-  const friendsCol = collection(db, "users", auth.currentUser.uid, "friends");
-  onSnapshot(friendsCol, async snapshot => {
-    friendsListDiv.innerHTML = "";
-    if (snapshot.empty) {
-      friendsListDiv.innerHTML = `<p style="padding:16px; color:#8696a0; font-size:13px; text-align:center;">No hay contactos.</p>`;
-      return;
-    }
-
-    // Build a map of known users for quick access
-    const allUsersSnap = await getDocs(collection(db, "users"));
-    let usersMap = {};
-    allUsersSnap.forEach(uDoc => { const d = uDoc.data(); usersMap[d.name] = { email: d.email, img: d.photoURL||"", status: d.status||"offline", fans: d.fansCount||0 }; });
-
-    // Collect friend entries and fetch latest message timestamp & preview for each concurrently
-    const friendEntries = [];
-    const fetchPromises = [];
-    snapshot.forEach(friendDoc => {
-      const friendData = friendDoc.data();
-      const fName = friendData.name;
-      const isBlocked = friendData.blocked || false;
-      const fAvatar = usersMap[fName]?.img || "";
-      const fStatus = usersMap[fName]?.status || "offline";
-      const fFans = usersMap[fName]?.fans || 0;
-      const fEmail = usersMap[fName]?.email || "";
-      const sortedNames = [auth.currentUser.displayName, fName].sort();
-      const roomId = `room_${sortedNames[0]}_${sortedNames[1]}`;
-
-      friendEntries.push({ fName, isBlocked, fAvatar, fStatus, fFans, fEmail, roomId });
-      // fetch latest message for this room (limit 1)
-      const p = (async () => {
-        try {
-          const q = query(collection(db, "messages"), where("roomId", "==", roomId), orderBy("createdAt", "desc"));
-          const s = await getDocs(q);
-          if (!s.empty) {
-            const m = s.docs[0].data();
-            return { roomId, lastAt: m.createdAt ? (m.createdAt.toMillis ? m.createdAt.toMillis() : Date.now()) : Date.now(), lastText: m.text || (m.imageUrl ? "[imagen]" : "") };
-          }
-        } catch (e) { console.warn("latest msg fetch failed", e); }
-        return { roomId, lastAt: 0, lastText: "" };
-      })();
-      fetchPromises.push(p);
-    });
-
-    const latestResults = await Promise.all(fetchPromises);
-    const latestMap = {};
-    latestResults.forEach(r => { if (r && r.roomId) latestMap[r.roomId] = r; });
-
-    // Attach latest info and sort friends so recent message senders appear first
-    friendEntries.forEach(fe => {
-      const lr = latestMap[fe.roomId] || { lastAt: 0, lastText: "" };
-      fe.lastAt = lr.lastAt;
-      fe.lastText = lr.lastText;
-    });
-    friendEntries.sort((a,b) => (b.lastAt || 0) - (a.lastAt || 0));
-
-    // Render sorted friend list. Recent senders will appear on top.
-    friendsListDiv.innerHTML = "";
-    friendEntries.forEach(fe => {
-      const fName = fe.fName; const isBlocked = fe.isBlocked; const fAvatar = fe.fAvatar; const fStatus = fe.fStatus; const fFans = fe.fFans; const fEmail = fe.fEmail;
-      const div = document.createElement("div"); div.classList.add("friend-item"); div.id = `friend-${btoa(fName)}`;
-      let avRender = fAvatar ? `<div class="avatar" style="background-image:url('${fAvatar}'); background-size:cover; background-position:center;"></div>` : `<div class="avatar">${fName.charAt(0).toUpperCase()}</div>`;
-      let followersLabelHtml = (checkIsVerified(fEmail, fFans) || fFans > 0) ? `<div class="followers-count">${formatFans(fFans)}</div>` : '';
-      // Show a small preview of the latest message and time (if any)
-      const lastPreview = fe.lastText ? `<div style="font-size:12px; color:#9fb3b0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:4px;">${fe.lastText}</div>` : "";
-      div.innerHTML = `
-        <div class="${fStatus === "online" ? "status-dot online" : "status-dot"}"></div>
-        ${avRender}
-        <div style="flex:1; overflow:hidden;">
-          <div style="font-weight: 500; font-size:15px; display:flex; align-items:center; gap:6px;">${fName} ${checkIsVerified(fEmail, fFans) ? verifiedBadgeHtml:''} ${isBlocked?'<span style="color:#ef4444; font-size:11px;">(Blq)</span>':''}</div>
-          <div style="display:flex; gap:8px; align-items:center; justify-content:flex-start;">
-            <div style="font-size: 12px; color:#8696a0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${fName.toLowerCase()}</div>
-            ${followersLabelHtml}
-          </div>
-          ${lastPreview}
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn-secondary" style="padding:6px 8px; font-size:12px;" onclick="selectFriendChat('${fName}','${fEmail}', ${isBlocked}, '${fAvatar}')">Chatear</button>
-          <button class="btn-primary" id="follow-btn-${btoa(fEmail)}" style="padding:6px 8px; font-size:12px;" onclick="toggleFollow('${fEmail}', this)"></button>
-        </div>
-      `;
-      // clicking anywhere opens chat
-      div.addEventListener("click", () => selectFriendChat(fName, fEmail, isBlocked, fAvatar));
-      friendsListDiv.appendChild(div);
-      setTimeout(() => updateFollowButtonUI(fEmail), 50);
-    });
-  });
-}
-
-function applySavedBackground(preset, customBase64) {
-  if(preset === "classic") {
-    chatPanel.style.backgroundColor = "#0b141a"; chatPanel.style.backgroundImage = "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')";
-  } else if(preset === "midnight") {
-    chatPanel.style.backgroundColor = "#0f172a"; chatPanel.style.backgroundImage = "none";
-  } else if(preset === "forest") {
-    chatPanel.style.backgroundColor = "#06241b"; chatPanel.style.backgroundImage = "none";
-  } else if(preset === "custom" && customBase64) {
-    chatPanel.style.backgroundColor = "#0b141a"; chatPanel.style.backgroundImage = `url('${customBase64}')`;
-  }
-}
-
-window.openSettingsModal = () => { 
-  document.getElementById("settingsProfileName").value = auth.currentUser.displayName || "";
-  document.getElementById("settingsModal").style.display = "flex"; 
-};
-window.closeSettingsModal = () => { document.getElementById("settingsModal").style.display = "none"; };
-window.previewBackgroundChange = (v) => { document.getElementById("customBgGroup").style.display = (v === "custom") ? "flex" : "none"; };
-
-window.processAvatarFile = async (input) => {
-  const f = input.files[0]; if(!f) return;
-  document.getElementById("avatarFileName").innerText = `Cargando...`;
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    // prepare crop UI
-    const dataUrl = reader.result;
-    const cropModal = document.getElementById("avatar-crop-modal");
-    const cropImage = document.getElementById("crop-image");
-    const zoomRange = document.getElementById("crop-zoom");
-    cropImage.src = dataUrl;
-    cropImage.style.transform = "translate(-50%,-50%) scale(1)";
-    cropImage.style.left = "50%"; cropImage.style.top = "50%";
-    cropImage.dataset.tx = "50%"; cropImage.dataset.ty = "50%";
-    zoomRange.value = 1;
-    // reset drag state
-    cropImage.style.transition = "none";
-    cropImage.dataset.scale = 1;
-    cropImage.dataset.x = 0;
-    cropImage.dataset.y = 0;
-    cropModal.style.display = "flex";
-    document.getElementById("avatarFileName").innerText = `Listo.`;
-  };
-  reader.readAsDataURL(f);
-};
-
-// Crop interactions: drag to move, zoom slider
-(function(){
-  const img = () => document.getElementById("crop-image");
-  const frame = document.getElementById("crop-frame");
-  let dragging = false, startX = 0, startY = 0, origX = 0, origY = 0;
-
-  document.addEventListener("pointerdown", (e) => {
-    const ii = img(); if(!ii) return;
-    if(e.target !== ii) return;
-    dragging = true; startX = e.clientX; startY = e.clientY;
-    origX = parseFloat(ii.dataset.x || 0); origY = parseFloat(ii.dataset.y || 0);
-    ii.setPointerCapture?.(e.pointerId);
-  });
-
-  document.addEventListener("pointermove", (e) => {
-    if(!dragging) return;
-    const ii = img(); if(!ii) return;
-    const dx = e.clientX - startX; const dy = e.clientY - startY;
-    const nx = origX + dx; const ny = origY + dy;
-    ii.dataset.x = nx; ii.dataset.y = ny;
-    updateTransform(ii);
-  });
-
-  document.addEventListener("pointerup", (e) => {
-    if(!dragging) return;
-    dragging = false;
-  });
-
-  document.getElementById("crop-zoom").addEventListener("input", (ev) => {
-    const ii = img(); if(!ii) return;
-    const s = parseFloat(ev.target.value);
-    ii.dataset.scale = s;
-    updateTransform(ii);
-  });
-
-  function updateTransform(ii){
-    const s = parseFloat(ii.dataset.scale || 1);
-    const x = parseFloat(ii.dataset.x || 0);
-    const y = parseFloat(ii.dataset.y || 0);
-    ii.style.transform = `translate(-50%,-50%) translate(${x}px, ${y}px) scale(${s})`;
-  }
-})();
-
-window.cancelAvatarCrop = () => {
-  document.getElementById("avatar-crop-modal").style.display = "none";
-};
-
-window.resetCrop = () => {
-  const ii = document.getElementById("crop-image"); if(!ii) return;
-  ii.dataset.scale = 1; ii.dataset.x = 0; ii.dataset.y = 0;
-  ii.style.transform = `translate(-50%,-50%) scale(1)`;
-  document.getElementById("crop-zoom").value = 1;
-};
-
-window.applyAvatarCrop = async () => {
-  const ii = document.getElementById("crop-image"); if(!ii) return;
-  const scale = parseFloat(ii.dataset.scale || 1);
-  const offsetX = parseFloat(ii.dataset.x || 0);
-  const offsetY = parseFloat(ii.dataset.y || 0);
-
-  // final canvas size for avatar
-  const canvasSize = 512;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvasSize; canvas.height = canvasSize;
-  const ctx = canvas.getContext("2d");
-
-  const src = new Image();
-  src.crossOrigin = "anonymous";
-  src.onload = async () => {
-    // compute how the image was displayed inside the crop frame originally
-    const frameRect = document.getElementById("crop-frame").getBoundingClientRect();
-    const nW = src.naturalWidth, nH = src.naturalHeight;
-
-    // base fit scale (cover behavior)
-    const fitScale = Math.max(frameRect.width / nW, frameRect.height / nH);
-    const displayW = nW * fitScale * scale;
-    const displayH = nH * fitScale * scale;
-
-    // draw centered on canvas and apply the same offsets (offsetX/offsetY are pixels relative to frame center)
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-    ctx.save();
-    // move origin to canvas center
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    // apply the user drag offsets scaled to canvas scale (frame circle -> canvas)
-    const circleSize = 160; // same visual size used in UI
-    const canvasScale = canvas.width / circleSize;
-    ctx.translate(offsetX * canvasScale, offsetY * canvasScale);
-    // draw image centered, scaled so that the portion visible in the UI maps to the canvas
-    const drawW = displayW * canvasScale;
-    const drawH = displayH * canvasScale;
-    ctx.drawImage(src, -drawW / 2, -drawH / 2, drawW, drawH);
-    ctx.restore();
-
-    // mask to circle
-    ctx.globalCompositeOperation = 'destination-in';
-    ctx.beginPath();
-    ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2, 0, Math.PI*2);
-    ctx.closePath();
-    ctx.fill();
-
-    const croppedData = canvas.toDataURL("image/png");
-
-    // apply to UI and save to Firestore & auth profile (also force consistent sizing)
-    tempAvatarBase64 = croppedData;
-    const myAv = document.getElementById("myAvatar");
-    myAv.innerText = "";
-    myAv.style.backgroundImage = `url('${tempAvatarBase64}')`;
-    myAv.style.backgroundSize = "cover";
-    myAv.style.backgroundPosition = "center";
-
-    try {
-      if (auth.currentUser) {
-        const myUserQuery = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-        if (!myUserQuery.empty) {
-          const docRef = doc(db, "users", myUserQuery.docs[0].id);
-          await updateDoc(docRef, { photoURL: tempAvatarBase64 });
-        }
-        await updateProfile(auth.currentUser, { photoURL: tempAvatarBase64 }).catch(()=>{});
-      }
-    } catch (e) { console.error(e); }
-
-    document.getElementById("avatar-crop-modal").style.display = "none";
-    alert("Foto de perfil actualizada.");
-  };
-  src.src = ii.src;
-};
-
-window.processBgFile = async (input) => {
-  const f = input.files[0]; if(!f) return;
-  document.getElementById("bgFileName").innerText = `Listo.`;
-  const r = new FileReader();
-  r.onloadend = async () => {
-    tempBgBase64 = r.result;
-    // Preview immediately
-    applySavedBackground(document.getElementById("setBackgroundPreset").value || "custom", tempBgBase64);
-    try {
-      if (auth.currentUser) {
-        const myUserQuery = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-        if (!myUserQuery.empty) {
-          const docRef = doc(db, "users", myUserQuery.docs[0].id);
-          await updateDoc(docRef, { customBg: tempBgBase64, bgPreset: "custom" });
-        }
-      }
-    } catch (e) { console.error(e); }
-  };
-  r.readAsDataURL(f);
-};
-
-// SOLUCIONADO: Modificación global sincronizada con la UI Lateral basada en Email fijo
-
-// Copiar ID público al portapapeles
-window.copyPublicId = () => {
-  const el = document.getElementById("settingsPublicId");
-  if(!el || !el.value) return alert("No tenés ID público asignado aún.");
-  navigator.clipboard?.writeText(el.value).then(() => {
-    alert("ID copiado al portapapeles: " + el.value);
-  }).catch(() => {
-    // Fallback
-    el.select(); document.execCommand('copy'); alert("ID copiado al portapapeles: " + el.value);
-  });
-};
-
-window.saveSettings = async () => {
-  const preset = document.getElementById("setBackgroundPreset").value;
-  const newName = document.getElementById("settingsProfileName").value.trim();
-  const oldName = auth.currentUser.displayName;
-  if(!newName) return alert("El nombre no puede quedar vacío.");
-
-  try {
-    if (newName !== oldName) {
-      const nameCheck = await getDocs(query(collection(db, "users"), where("name", "==", newName)));
-      if(!nameCheck.empty) return alert("Este nombre ya está registrado.");
-    }
-
-    const myUserDoc = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-    if(!myUserDoc.empty) {
-      const docRef = doc(db, "users", myUserDoc.docs[0].id);
-      let updateFields = { bgPreset: preset, name: newName };
-      
-      if(checkIsVerified(auth.currentUser.email, newName)) {
-         updateFields.fansCount = INITIAL_FANS_COUNT;
-      }
-
-      if(tempAvatarBase64) updateFields.photoURL = tempAvatarBase64;
-      if(preset === "custom" && tempBgBase64) updateFields.customBg = tempBgBase64;
-      
-      await updateDoc(docRef, updateFields);
-      await updateProfile(auth.currentUser, { displayName: newName });
-
-      // Propagación de nombres en mensajes viejos
-      if (newName !== oldName) {
-        const msgQuery = await getDocs(query(collection(db, "messages"), where("senderName", "==", oldName)));
-        const batch = writeBatch(db);
-        msgQuery.forEach(mDoc => {
-          batch.update(doc(db, "messages", mDoc.id), { senderName: newName });
+    // Auth actions
+    window.register = async () => {
+      const name = document.getElementById("regName").value.trim();
+      const email = document.getElementById("regEmail").value.trim().toLowerCase();
+      const pass = document.getElementById("regPass").value;
+      if(!name||!email||!pass) return alert("Completa todos los campos.");
+      try{
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(cred.user, { displayName: name });
+        // create user doc
+        const publicId = generatePublicId();
+        await setDoc(doc(db, "users", cred.user.uid), {
+          name, email, publicId, photoURL:"", fansCount:0, status:"online", banUntil:null
         });
-        await batch.commit();
+        alert("Cuenta creada. ID público: " + publicId);
+      }catch(e){ alert(e.message||"Error al registrar"); }
+    };
+
+    window.login = async () => {
+      const email = document.getElementById("logEmail").value.trim().toLowerCase();
+      const pass = document.getElementById("logPass").value;
+      if(!email||!pass) return alert("Completa ambos campos.");
+      try{ await signInWithEmailAndPassword(auth, email, pass); } catch(e){ alert("Credenciales inválidas"); }
+    };
+
+    window.logout = async () => {
+      if(auth.currentUser){
+        // set offline
+        const q = await getDoc(doc(db,"users",auth.currentUser.uid));
+        if(q.exists()) await updateDoc(doc(db,"users",auth.currentUser.uid),{status:"offline"});
       }
+      await signOut(auth);
+      location.reload();
+    };
 
-      if(tempAvatarBase64) {
-        document.getElementById("myAvatar").innerText = ""; document.getElementById("myAvatar").style.backgroundImage = `url('${tempAvatarBase64}')`;
-      }
-      const updatedSnap = await getDoc(docRef);
-      applySavedBackground(preset, updatedSnap.data().customBg || tempBgBase64);
-    }
-    closeSettingsModal(); alert("Perfil actualizado correctamente.");
-  } catch(e) { console.error(e); }
-};
+    // Add contact by publicId
+    window.addContact = async () => {
+      const id = document.getElementById("addPublicId").value.trim().toUpperCase();
+      if(!id) return alert("Ingresá un ID.");
+      try{
+        const q = query(collection(db,"users"), where("publicId","==",id));
+        const snap = await getDocs(q);
+        if(snap.empty) return alert("No se encontró usuario.");
+        const target = snap.docs[0].data();
+        // save under current user's subcollection "friends"
+        await setDoc(doc(db,"users",auth.currentUser.uid,"friends", btoa(target.email)), {
+          name: target.name, email: target.email, addedAt: serverTimestamp(), blocked:false
+        });
+        document.getElementById("addPublicId").value="";
+        alert("Contacto agregado: " + target.name);
+      }catch(e){ console.error(e); alert("Error al agregar"); }
+    };
 
-window.toggleBlockFriend = async () => {
-  if (!currentActiveFriend) return;
-  try {
-    const fId = btoa(currentActiveFriend.name);
-    const nState = !currentActiveFriend.blocked;
-    await updateDoc(doc(db, "users", auth.currentUser.uid, "friends", fId), { blocked: nState });
-    currentActiveFriend.blocked = nState;
-    selectFriendChat(currentActiveFriend.name, currentActiveFriend.email, nState);
-    updateBlockButtonUI();
-  } catch (e) { console.error(e); }
-};
-
-// Explicit unblock function (callable from UI or programmatically)
-window.unblockFriend = async () => {
-  if (!currentActiveFriend) return;
-  try {
-    const fId = btoa(currentActiveFriend.name);
-    await updateDoc(doc(db, "users", auth.currentUser.uid, "friends", fId), { blocked: false });
-    currentActiveFriend.blocked = false;
-    selectFriendChat(currentActiveFriend.name, currentActiveFriend.email, false);
-    updateBlockButtonUI();
-  } catch (e) { console.error(e); }
-};
-
-// Update block button label/icon based on currentActiveFriend state
-function updateBlockButtonUI() {
-  try {
-    const btn = document.getElementById("blockBtn");
-    if (!btn) return;
-    if (currentActiveFriend && currentActiveFriend.blocked) {
-      btn.innerText = "🔓"; // unlocked icon to indicate pressing will unblock
-      btn.title = "Desbloquear";
-    } else {
-      btn.innerText = "🚫";
-      btn.title = "Bloquear";
-    }
-  } catch(e) { /* ignore */ }
-}
-
-window.deleteCurrentChat = async () => {
-  if (!currentRoomId || !confirm("¿Estás seguro de que querés eliminar todo el historial de este chat? Esta acción no se puede deshacer.")) return;
-  try {
-    const snapshot = await getDocs(query(collection(db, "messages"), where("roomId", "==", currentRoomId)));
-    const batch = writeBatch(db);
-    snapshot.docs.forEach(ds => batch.delete(doc(db, "messages", ds.id)));
-    await batch.commit();
-    
-    await setDoc(doc(db, "rooms", currentRoomId), { pinnedText: "", typingUser: "" }, { merge: true });
-    messagesDiv.innerHTML = "";
-    alert("Chat completo eliminado con éxito.");
-  } catch (e) { console.error(e); }
-};
-
-window.toggleEmojiBox = () => emojiBox.style.display = emojiBox.style.display === "grid" ? "none" : "grid";
-window.addEmoji = (em) => { textInput.value += em; textInput.focus(); sendBtn.classList.add("active"); };
-window.openReactionMenu = (e, msgId, text) => {
-  e.stopPropagation(); activeMessageId = msgId; activeMessageTextContent = text;
-  reactionPicker.style.top = `${e.pageY - 55}px`; reactionPicker.style.left = `${Math.min(e.pageX - 50, window.innerWidth - 240)}px`;
-  reactionPicker.style.display = "flex";
-};
-window.sendReaction = async (em) => {
-  if (!activeMessageId) return; reactionPicker.style.display = "none";
-  try { await updateDoc(doc(db, "messages", activeMessageId), { reaction: em }); } catch (e) { console.error(e); }
-};
-
-textInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
-document.addEventListener("click", () => { reactionPicker.style.display = "none"; });
-
- // Follow system helpers: "follows" collection documents: { from, to, createdAt }
-window.toggleFollow = async (targetEmail, btnEl) => {
-  if (!auth.currentUser || auth.currentUser.email === targetEmail) return;
-  const followsQ = query(collection(db, "follows"), where("from", "==", auth.currentUser.email), where("to", "==", targetEmail));
-  const snap = await getDocs(followsQ);
-  try {
-    if (snap.empty) {
-      // create follow
-      await addDoc(collection(db, "follows"), { from: auth.currentUser.email, to: targetEmail, createdAt: serverTimestamp() });
-      // increment target's fansCount
-      const targetQ = query(collection(db, "users"), where("email", "==", targetEmail));
-      const tSnap = await getDocs(targetQ);
-      if (!tSnap.empty) {
-        const tRef = doc(db, "users", tSnap.docs[0].id);
-        await updateDoc(tRef, { fansCount: (tSnap.docs[0].data().fansCount || 0) + 1 });
-      }
-    } else {
-      // unfollow: remove follow doc and decrement fansCount
-      const fDoc = snap.docs[0];
-      await deleteDoc(doc(db, "follows", fDoc.id));
-      const targetQ = query(collection(db, "users"), where("email", "==", targetEmail));
-      const tSnap = await getDocs(targetQ);
-      if (!tSnap.empty) {
-        const tRef = doc(db, "users", tSnap.docs[0].id);
-        const currentFans = tSnap.docs[0].data().fansCount || 0;
-        await updateDoc(tRef, { fansCount: Math.max(0, currentFans - 1) });
+    // Select chat
+    async function selectChat(friend){
+      currentChat = friend;
+      chatToTitle.innerText = friend.name;
+      msgControls.classList.remove("hidden");
+      composer.classList.remove("hidden");
+      noSelected.classList.add("hidden");
+      messagesArea.innerHTML = "";
+      updateBlockUI();
+      // create deterministic room id by sorting names
+      const names = [auth.currentUser.displayName || auth.currentUser.email, friend.name].sort();
+      const roomId = `room_${names[0]}_${names[1]}`;
+      // listen messages realtime
+      if(messagesUnsub) messagesUnsub();
+      const q = query(collection(db,"messages"), where("roomId","==",roomId), orderBy("createdAt","asc"));
+      messagesUnsub = onSnapshot(q, snap => {
+        messagesArea.innerHTML="";
+        snap.forEach(docSnap=>{
+          const m = docSnap.data();
+          const div = document.createElement("div");
+          div.className = "msg " + (m.user===auth.currentUser.email ? "me":"other");
+          div.innerText = m.text || "[imagen]";
+          messagesArea.appendChild(div);
+        });
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+      });
+      // ensure room meta exists
+      await setDoc(doc(db,"rooms",roomId), { updatedAt: serverTimestamp() }, { merge:true });
+      // save current room on object for sending
+      currentChat.roomId = roomId;
+      // restore draft if any
+      const rdoc = await getDoc(doc(db,"rooms",roomId));
+      if(rdoc.exists()){
+        const drafts = rdoc.data().lastDrafts || {};
+        const myDraft = drafts[auth.currentUser.email] || "";
+        if(myDraft) { messageInput.value = myDraft; }
       }
     }
-    // update UI
-    updateFollowButtonUI(targetEmail);
-    // refresh community lists to reflect real follower counts
-    renderCommunityData();
-  } catch (e) { console.error(e); }
-};
 
-window.updateFollowButtonUI = async (targetEmail) => {
-  const btn = document.getElementById(`follow-btn-${btoa(targetEmail)}`);
-  if(!btn) return;
-  // Hide the button for self or when not logged
-  if (!auth.currentUser || auth.currentUser.email === targetEmail) {
-    btn.style.display = "none"; return;
-  }
-  const qf = query(collection(db, "follows"), where("from", "==", auth.currentUser.email), where("to", "==", targetEmail));
-  const snap = await getDocs(qf);
-  // Keep a single consistent visual style and only change the label
-  if (snap.empty) {
-    btn.innerText = "Seguir";
-    btn.classList.remove("btn-secondary");
-    btn.classList.add("btn-primary");
-    btn.style.opacity = "1";
-  } else {
-    btn.innerText = "Siguiendo";
-    // keep it visible and styled as primary so it's always a single button
-    btn.classList.remove("btn-primary");
-    btn.classList.add("btn-secondary");
-    btn.style.opacity = "1";
-  }
-};
+    // Send message
+    window.sendMsg = async () => {
+      const txt = messageInput.value.trim();
+      if(!currentChat || !currentChat.roomId) return alert("Seleccioná un chat primero.");
+      if(!txt) return;
+      // simple content check
+      const blackList = ["porno","porn","xnxx","hentai","desnudo","tetas","coger"];
+      if(blackList.some(w=>txt.toLowerCase().includes(w))){
+        // ban user for 10 minutes
+        const until = new Date(Date.now() + 10*60*1000);
+        await updateDoc(doc(db,"users",auth.currentUser.uid), { banUntil: until });
+        alert("Contenido no permitido. Has sido baneado temporalmente.");
+        return;
+      }
+      try{
+        await addDoc(collection(db,"messages"), {
+          text: txt, user: auth.currentUser.email, senderName: auth.currentUser.displayName||"", roomId: currentChat.roomId, createdAt: serverTimestamp()
+        });
+        // clear input and save draft empty
+        messageInput.value = "";
+        await setDoc(doc(db,"rooms",currentChat.roomId), { lastDrafts: { [auth.currentUser.email]:"" } }, { merge:true });
+      }catch(e){ console.error(e); alert("No se pudo enviar"); }
+    };
 
- // AUTH SYNC & CORRECCIÓN DE PANEL LATERAL EN TIEMPO REAL (En base al Mail)
-onAuthStateChanged(auth, async user => {
-  if (user) {
-    authDiv.style.display = "none"; mainContainer.style.display = "flex";
-    const myUserQuery = query(collection(db, "users"), where("email", "==", user.email));
-    
-    onSnapshot(myUserQuery, snapshot => {
-      if(!snapshot.empty) {
-        const uData = snapshot.docs[0].data(); const myName = uData.name || user.email.split("@")[0];
-        
-        // CORREGIDO: Fuerza la actualización del nodo de texto al cambiar de nombre
-        document.getElementById("myProfileName").innerHTML = `<span>${myName}</span>` + (checkIsVerified(user.email, uData.fansCount || 0) ? verifiedBadgeHtml : "");
-        igLockScreen.style.display = (uData.followedIg === false) ? "flex" : "none";
+    // Typing indicator: store in rooms.typingUser
+    window.typingIndicator = async () => {
+      if(!currentChat || !currentChat.roomId) return;
+      await setDoc(doc(db,"rooms",currentChat.roomId), { typingUser: auth.currentUser.displayName }, { merge:true });
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(async ()=> {
+        if(currentChat && currentChat.roomId) await setDoc(doc(db,"rooms",currentChat.roomId), { typingUser: "" }, { merge:true });
+      }, 1300);
+      // save draft locally to room
+      await setDoc(doc(db,"rooms",currentChat.roomId), { lastDrafts: { [auth.currentUser.email]: messageInput.value } }, { merge:true });
+    };
 
-        const myFollowersLabel = document.getElementById("myFollowersLabel");
-        // show creator's 1,000,000 followers and verified badge reliably
-        if (user.email === VERIFIED_EMAIL) {
-          myFollowersLabel.innerText = formatFans(INITIAL_FANS_COUNT); myFollowersLabel.style.display = "inline-block";
-        } else if (checkIsVerified(user.email, uData.fansCount || 0) || (uData.fansCount || 0) > 0) {
-          myFollowersLabel.innerText = formatFans(uData.fansCount || 0); myFollowersLabel.style.display = "inline-block";
-        } else { myFollowersLabel.style.display = "none"; }
+    // Delete chat messages (bulk delete simple approach)
+    window.deleteChat = async () => {
+      if(!currentChat || !currentChat.roomId) return;
+      if(!confirm("Eliminar todo el historial de este chat?")) return;
+      // fetch messages and delete (best-effort)
+      const q = query(collection(db,"messages"), where("roomId","==",currentChat.roomId));
+      const snap = await getDocs(q);
+      const deletes = [];
+      snap.forEach(d=> deletes.push(deleteDoc(doc(db,"messages",d.id))));
+      await Promise.all(deletes);
+      // clear UI
+      messagesArea.innerHTML="";
+      alert("Historial eliminado.");
+    };
 
-        if(uData.photoURL) { 
-          document.getElementById("myAvatar").innerText = ""; document.getElementById("myAvatar").style.backgroundImage = `url('${uData.photoURL}')`; 
-        } else { 
-          document.getElementById("myAvatar").innerText = myName.charAt(0).toUpperCase(); document.getElementById("myAvatar").style.backgroundImage = "none";
+    // Block/unblock friend (updates friend record)
+    window.toggleBlock = async () => {
+      if(!currentChat) return;
+      const fid = btoa(currentChat.email);
+      const fRef = doc(db,"users",auth.currentUser.uid,"friends",fid);
+      const fd = await getDoc(fRef);
+      const newState = !(fd.exists() && fd.data().blocked);
+      await setDoc(fRef, { blocked: newState, name: currentChat.name, email: currentChat.email }, { merge:true });
+      currentChat.blocked = newState;
+      updateBlockUI();
+    };
+
+    function updateBlockUI(){
+      const blocked = !!currentChat && !!currentChat.blocked;
+      blockBtn.innerText = blocked ? "Desbloquear" : "Bloquear";
+      if(blocked){ composer.classList.add("hidden"); chatToSubtitle.innerText = "Usuario bloqueado"; } else { composer.classList.remove("hidden"); chatToSubtitle.innerText = "En línea (tiempo real)"; }
+    }
+
+    // Load friends list realtime
+    function loadContacts(){
+      const col = collection(db,"users",auth.currentUser.uid,"friends");
+      onSnapshot(col, async snap=>{
+        contactsList.innerHTML="";
+        if(snap.empty){ contactsList.innerHTML = '<div class="muted">Sin contactos</div>'; return; }
+        // get global users map for enrichment
+        const allUsers = await getDocs(collection(db,"users"));
+        const map = {};
+        allUsers.forEach(d=> map[d.data().email] = d.data());
+        snap.forEach(docu=>{
+          const f = docu.data();
+          const div = document.createElement("div");
+          div.className = "friend";
+          div.innerHTML = `<div style="width:36px;height:36px;border-radius:8px;background:#092126;display:flex;align-items:center;justify-content:center;font-weight:700">${(f.name||'U').charAt(0).toUpperCase()}</div>
+                           <div style="flex:1"><div style="font-weight:600">${f.name}</div><div class="muted" style="font-size:12px">${map[f.email]?.fansCount? map[f.email].fansCount + ' seguidores': ''}</div></div>
+                           <div style="display:flex;flex-direction:column;gap:6px"><button class="small" onclick="event.stopPropagation(); selectChat({name:${JSON.stringify(f.name)},email:${JSON.stringify(f.email)},blocked:${!!f.blocked}})">Chatear</button></div>`;
+          div.addEventListener("click", ()=> selectChat({name:f.name,email:f.email,blocked:!!f.blocked}));
+          contactsList.appendChild(div);
+        });
+      });
+    }
+
+    // Auth state
+    onAuthStateChanged(auth, async user=>{
+      if(user){
+        // hide auth forms show user panel
+        registerForm.classList.add("hidden");
+        loginForm.classList.add("hidden");
+        authForms.classList.add("hidden");
+        userPanel.classList.remove("hidden");
+        // ensure user doc exists
+        const udoc = await getDoc(doc(db,"users",user.uid));
+        if(!udoc.exists()){
+          const publicId = generatePublicId();
+          await setDoc(doc(db,"users",user.uid), {
+            name: user.displayName || user.email.split("@")[0],
+            email: user.email, publicId, photoURL:"", fansCount:0, status:"online", banUntil:null
+          });
+        } else {
+          // update online status
+          await updateDoc(doc(db,"users",user.uid), { status:"online" }).catch(()=>{});
         }
-
-        // Mostrar ID público en ajustes (si existe)
-        const pubIdEl = document.getElementById("settingsPublicId");
-        if(pubIdEl) pubIdEl.value = uData.publicId || "";
-
-        applySavedBackground(uData.bgPreset || "classic", uData.customBg || "");
-        if(uData.bgPreset) document.getElementById("setBackgroundPreset").value = uData.bgPreset;
+        // load UI details
+        const udocRef = await getDoc(doc(db,"users",user.uid));
+        currentUserDoc = udocRef.data();
+        meName.innerText = user.displayName || currentUserDoc.name || user.email.split("@")[0];
+        meId.innerText = "ID: " + (currentUserDoc.publicId || "");
+        loadContacts();
       } else {
-        // Fallback cuando aún no hay documento en Firestore: crear uno mínimo con ID público y mostrar displayName/email
-        const myName = user.displayName || user.email.split("@")[0];
-        const isCreator = user.email === VERIFIED_EMAIL;
-
-        // Ensure a users document exists for this authenticated user (create minimal profile with publicId)
-        (async () => {
-          try {
-            // generate a publicId and ensure it's unique (retry a few times if collision)
-            let publicId = generatePublicId();
-            for (let i = 0; i < 4; i++) {
-              const existing = await getDocs(query(collection(db, "users"), where("publicId", "==", publicId)));
-              if (existing.empty) break;
-              publicId = generatePublicId();
-            }
-
-            const docRef = doc(db, "users", user.uid);
-            const initialFans = isCreator ? INITIAL_FANS_COUNT : 0;
-            await setDoc(docRef, {
-              name: myName,
-              email: user.email,
-              photoURL: "",
-              bgPreset: "classic",
-              customBg: "",
-              status: "online",
-              followedIg: isCreator,
-              fansCount: initialFans,
-              banUntil: null,
-              publicId
-            }, { merge: true });
-
-            // reflect publicId into UI
-            const pubIdElFallback = document.getElementById("settingsPublicId");
-            if (pubIdElFallback) pubIdElFallback.value = publicId;
-
-            if (isCreator) {
-              const myFollowersLabel = document.getElementById("myFollowersLabel");
-              myFollowersLabel.innerText = formatFans(INITIAL_FANS_COUNT);
-              myFollowersLabel.style.display = "inline-block";
-            }
-          } catch (err) {
-            console.error("Error creating fallback user doc:", err);
-          }
-        })();
-
-        // Update UI immediately while doc creation runs
-        document.getElementById("myProfileName").innerHTML = `<span>${myName}</span>` + (checkIsVerified(user.email, isCreator ? INITIAL_FANS_COUNT : 0) ? verifiedBadgeHtml : "");
-        igLockScreen.style.display = isCreator ? "none" : "flex"; // if creator assume followed / skip lock
-        document.getElementById("myAvatar").innerText = myName.charAt(0).toUpperCase();
-        document.getElementById("myAvatar").style.backgroundImage = "none";
+        // show auth forms
+        authForms.classList.remove("hidden");
+        registerForm.classList.remove("hidden");
+        loginForm.classList.add("hidden");
+        userPanel.classList.add("hidden");
       }
     });
 
-    const myUserDoc = await getDocs(myUserQuery);
-    if(!myUserDoc.empty) await updateDoc(doc(db, "users", myUserDoc.docs[0].id), { status: "online" });
-    loadFriendsSidebar();
-  } else {
-    authDiv.style.display = "flex"; mainContainer.style.display = "none"; igLockScreen.style.display = "none";
-  }
-});
-
-// Open a persistent Z IA chat room (text-only bot)
-window.openZiaChat = async () => {
-  if(!auth.currentUser) return alert("Inicia sesión primero.");
-  // ensure Z IA user exists as a local pseudo-account in UI (no firestore user required)
-  const zName = "Z IA";
-  const zEmail = "zia@local";
-  // create room id consistent with other chats
-  const sortedNames = [auth.currentUser.displayName, `Z IA`].sort();
-  const roomId = `room_${sortedNames[0]}_${sortedNames[1]}_z_ia_chat`;
-  // set globals then open
-  currentActiveFriend = { name: zName, email: zEmail, blocked: false };
-  currentRoomId = roomId;
-  appRoot.classList.add("chat-open");
-  document.getElementById("noChatActive").style.display = "none";
-  document.getElementById("chatContent").style.display = "flex";
-  document.getElementById("activeChatName").innerText = zName;
-  const headerAvatar = document.getElementById("activeChatAvatar");
-  // show a simple emoji avatar for the bot instead of using the image asset
-  headerAvatar.style.backgroundImage = "none";
-  headerAvatar.innerText = "🤖";
-  headerAvatar.style.fontSize = "20px";
-  headerAvatar.style.display = "flex";
-  headerAvatar.style.alignItems = "center";
-  headerAvatar.style.justifyContent = "center";
-  headerAvatar.style.backgroundSize = "";
-  headerAvatar.style.backgroundPosition = "";
-  document.getElementById("activeChatVerified").innerHTML = verifiedBadgeHtml;
-  document.getElementById("activeChatFollowers").style.display = "none";
-  document.getElementById("activeChatStatusText").innerText = "Asistente";
-  document.getElementById("activeChatStatusText").style.color = "#00a884";
-  // ensure room meta exists
-  await setDoc(doc(db, "rooms", currentRoomId), { pinnedText: "", typingUser: "" }, { merge: true });
-  loadPrivateMessages();
-  listenRoomMetaAndStatus();
-};
-
-// Save current draft and user settings to Firestore (used on unload/logout)
-async function saveDraftAndSettings() {
-  if (!auth.currentUser) return;
-  try {
-    // Save unsent text draft for the current room into the rooms doc (field: lastDrafts.{roomId})
-    const draftText = (textInput && currentRoomId) ? textInput.value.trim() : "";
-    const myUserQ = await getDocs(query(collection(db, "users"), where("email", "==", auth.currentUser.email)));
-    if (!myUserQ.empty) {
-      const myDocRef = doc(db, "users", myUserQ.docs[0].id);
-      // Save displayName, bgPreset and avatar if present
-      const profilePayload = {};
-      profilePayload.name = auth.currentUser.displayName || (document.getElementById("settingsProfileName").value || "");
-      if (tempAvatarBase64) profilePayload.photoURL = tempAvatarBase64;
-      profilePayload.bgPreset = document.getElementById("setBackgroundPreset")?.value || "classic";
-      if (tempBgBase64 && profilePayload.bgPreset === "custom") profilePayload.customBg = tempBgBase64;
-      await updateDoc(myDocRef, profilePayload);
-
-      // Save draft into the "rooms" document for currentRoomId to keep drafts associated with the room
-      if (currentRoomId) {
-        const roomRef = doc(db, "rooms", currentRoomId);
-        await setDoc(roomRef, { lastDrafts: { [auth.currentUser.email]: draftText } }, { merge: true });
+    // Before unload save draft
+    window.addEventListener("beforeunload", async () => {
+      if(currentChat && currentChat.roomId && auth.currentUser){
+        await setDoc(doc(db,"rooms",currentChat.roomId), { lastDrafts: { [auth.currentUser.email]: messageInput.value||"" } }, { merge:true });
       }
-    }
-  } catch (e) {
-    console.error("saveDraftAndSettings error:", e);
-  }
-}
+    });
 
-// Restore draft (when entering a room, try to load saved draft)
-async function restoreDraftForRoom(roomId) {
-  if (!auth.currentUser || !roomId) return;
-  try {
-    const roomDoc = await getDoc(doc(db, "rooms", roomId));
-    if (roomDoc.exists()) {
-      const data = roomDoc.data();
-      const drafts = data.lastDrafts || {};
-      const myDraft = drafts[auth.currentUser.email] || "";
-      if (myDraft && textInput) {
-        textInput.value = myDraft;
-        sendBtn.classList.toggle("active", myDraft.trim() !== "");
-      }
-    }
-  } catch (e) { console.error("restoreDraftForRoom error:", e); }
-}
-
-// When switching/loading messages, restore draft
-const originalLoadPrivateMessages = loadPrivateMessages;
-loadPrivateMessages = function() {
-  originalLoadPrivateMessages();
-  // small delay to ensure currentRoomId is set and listener attached
-  setTimeout(() => restoreDraftForRoom(currentRoomId), 400);
-};
-
-// Save on page unload/close
-window.addEventListener("beforeunload", (e) => {
-  // attempt to save synchronously (best-effort; Firestore calls are async and may not complete)
-  try {
-    // fire-and-forget saving
-    saveDraftAndSettings();
-  } catch (err) { /* ignore */ }
-});
-</script>
+  </script>
 </body>
 </html>
