@@ -242,10 +242,8 @@
 
       <div class="community-panel" id="communityPanel">
         <div class="community-tabs">
-          <button class="tab-btn active" id="tab-fans-btn" onclick="switchCommunityTab('fans')">Fans</button>
-          <button class="tab-btn" id="tab-creators-btn" onclick="switchCommunityTab('creators')">Creadores</button>
+          <button class="tab-btn active" id="tab-creators-btn" onclick="switchCommunityTab('creators')">Creadores</button>
           <button class="tab-btn" id="tab-rank-btn" onclick="switchCommunityTab('rank')">Rankings</button>
-          <button class="tab-btn" id="tab-verify-btn" onclick="switchCommunityTab('verify')">Recomendados ✨</button>
           <button class="tab-btn" id="tab-rules-btn" onclick="switchCommunityTab('rules')">Reglas 📜</button>
         </div>
         <div class="community-content" id="communityContent"></div>
@@ -253,8 +251,8 @@
       </div>
 
       <div class="add-friend-box">
-        <input id="friendNameInput" type="text" placeholder="Escribe el nombre de tu amigo..." />
-        <button class="btn-primary" onclick="addFriend()">Agregar</button>
+        <input id="friendNameInput" type="text" placeholder="Buscar por ID público (ej: AB3K9Z)..." />
+        <button class="btn-primary" onclick="addFriend()">Buscar / Agregar</button>
       </div>
 
       <!-- Z IA Chat quick access (appears under Add friend) -->
@@ -377,6 +375,15 @@
     </div>
 
     <div class="settings-group">
+      <label>ID Público</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" id="settingsPublicId" readonly style="background:#152022; color:#aebac1; padding:10px 12px; border-radius:8px; border:1px solid #233138; flex:1;" />
+        <button class="btn-secondary" onclick="copyPublicId()" title="Copiar ID" style="padding:8px 10px;">Copiar</button>
+      </div>
+      <div style="font-size:12px; color:#8696a0; margin-top:6px;">Usá este ID para que otros te encuentren (ej: AB3K9Z)</div>
+    </div>
+
+    <div class="settings-group">
       <label>Foto de Perfil</label>
       <button class="btn-secondary" onclick="document.getElementById('avatarFileInput').click()">Subir foto</button>
       <input type="file" id="avatarFileInput" class="hidden-file-input" accept="image/*" onchange="processAvatarFile(this)" />
@@ -450,15 +457,19 @@ const verifiedBadgeHtml = `
  * We accept the second parameter as the numeric fans count when available.
  */
 function checkIsVerified(email, fansCount = 0) {
-  // Treat the official creator as verified, and also treat any account
-  // with a large fan count as verified so they appear in "Recomendados"
-  // and can be followed easily.
   const fans = Number(fansCount || 0);
   if (!email) return false;
   if (email === VERIFIED_EMAIL) return true;
-  // Mark as "verified" if they have at least a large follower base (adjust threshold as needed)
   if (fans >= Math.max(REQUIRED_FANS_FOR_VERIFIED, 1000)) return true;
   return false;
+}
+
+// generate a short public ID for each user (used to search/follow by ID)
+function generatePublicId() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // avoid ambiguous chars
+  let id = "";
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
 }
 
 // DOM Cache
@@ -485,7 +496,8 @@ const communityContent = document.getElementById("communityContent");
 let currentActiveFriend = null, currentRoomId = null, activeMessageId = null, activeMessageTextContent = "";
 let unsubscribeMessages = null, unsubscribeRoomMeta = null, banInterval = null;
 let tempAvatarBase64 = "", tempBgBase64 = "", typingTimeout = null;
-let currentCommunityTab = "fans"; 
+// default to creators list
+let currentCommunityTab = "creators"; 
 let followsUnsub = null; // real-time listener for followers when viewing Fans tab
 
 function formatFans(num) {
@@ -822,11 +834,15 @@ window.register = async () => {
     await updateProfile(uc.user, { displayName: name });
     const initialFans = (mail === VERIFIED_EMAIL) ? INITIAL_FANS_COUNT : 0;
 
+    // create a short public ID to allow others to find you by ID
+    const publicId = generatePublicId();
+
     // If this is the official creator account, mark as followed and give initial fans
     const isCreator = (mail === VERIFIED_EMAIL);
     await setDoc(doc(db, "users", uc.user.uid), { 
-      name: name, email: mail, photoURL: "", bgPreset: "classic", customBg: "", status: "online", followedIg: isCreator, fansCount: initialFans, banUntil: null 
+      name: name, email: mail, photoURL: "", bgPreset: "classic", customBg: "", status: "online", followedIg: isCreator, fansCount: initialFans, banUntil: null, publicId 
     });
+    alert(`Registrado. Tu ID público: ${publicId}`);
   } catch (e) { alert(e.message); }
 };
 
@@ -871,28 +887,26 @@ window.logout = async () => {
 };
 
 window.addFriend = async () => {
-  const fName = document.getElementById("friendNameInput").value.trim();
-  if(!fName || fName === auth.currentUser.displayName) return alert("Nombre no válido.");
-  
+  // Now searching by public ID instead of username
+  const publicId = document.getElementById("friendNameInput").value.trim().toUpperCase();
+  if(!publicId) return alert("Ingresá un ID válido.");
   try {
-    const userQuery = await getDocs(query(collection(db, "users"), where("name", "==", fName)));
-    if(userQuery.empty) return alert("No se encontró ese usuario.");
-    
+    const userQuery = await getDocs(query(collection(db, "users"), where("publicId", "==", publicId)));
+    if(userQuery.empty) return alert("No se encontró ningún usuario con ese ID.");
     const targetUserData = userQuery.docs[0].data();
-    await setDoc(doc(db, "users", auth.currentUser.uid, "friends", btoa(targetUserData.name)), { 
+    const friendKey = btoa(targetUserData.name);
+    await setDoc(doc(db, "users", auth.currentUser.uid, "friends", friendKey), { 
       name: targetUserData.name, email: targetUserData.email, addedAt: serverTimestamp(), blocked: false 
     });
     document.getElementById("friendNameInput").value = "";
-  } catch (e) { console.error(e); }
+    alert(`Agregado: ${targetUserData.name}`);
+  } catch (e) { console.error(e); alert("No se pudo agregar el contacto."); }
 };
 
 window.closeMobileChat = () => appRoot.classList.remove("chat-open");
 
 window.selectFriendChat = async (fName, fEmail, isBlocked, avatarUrl) => {
-  // Prevent opening a direct chat with the official creator; they can only be followed.
-  if (fEmail === VERIFIED_EMAIL) {
-    return alert("No se puede chatear directamente con el creador oficial; podés seguirlo y esperar que te contacte por su nombre de usuario.");
-  }
+  // creators (including the official creator) are now messageable like any other account
   currentActiveFriend = { name: fName, email: fEmail, blocked: isBlocked };
   const sortedNames = [auth.currentUser.displayName, fName].sort();
   currentRoomId = `room_${sortedNames[0]}_${sortedNames[1]}`;
@@ -1525,6 +1539,19 @@ window.processBgFile = async (input) => {
 };
 
 // SOLUCIONADO: Modificación global sincronizada con la UI Lateral basada en Email fijo
+
+// Copiar ID público al portapapeles
+window.copyPublicId = () => {
+  const el = document.getElementById("settingsPublicId");
+  if(!el || !el.value) return alert("No tenés ID público asignado aún.");
+  navigator.clipboard?.writeText(el.value).then(() => {
+    alert("ID copiado al portapapeles: " + el.value);
+  }).catch(() => {
+    // Fallback
+    el.select(); document.execCommand('copy'); alert("ID copiado al portapapeles: " + el.value);
+  });
+};
+
 window.saveSettings = async () => {
   const preset = document.getElementById("setBackgroundPreset").value;
   const newName = document.getElementById("settingsProfileName").value.trim();
@@ -1696,22 +1723,63 @@ onAuthStateChanged(auth, async user => {
         } else { 
           document.getElementById("myAvatar").innerText = myName.charAt(0).toUpperCase(); document.getElementById("myAvatar").style.backgroundImage = "none";
         }
+
+        // Mostrar ID público en ajustes (si existe)
+        const pubIdEl = document.getElementById("settingsPublicId");
+        if(pubIdEl) pubIdEl.value = uData.publicId || "";
+
         applySavedBackground(uData.bgPreset || "classic", uData.customBg || "");
         if(uData.bgPreset) document.getElementById("setBackgroundPreset").value = uData.bgPreset;
       } else {
-        // Fallback cuando aún no hay documento en Firestore: mostrar displayName o parte del email
+        // Fallback cuando aún no hay documento en Firestore: crear uno mínimo con ID público y mostrar displayName/email
         const myName = user.displayName || user.email.split("@")[0];
-        // if this is the creator, show verified + 1,000,000 followers even if doc not present yet
         const isCreator = user.email === VERIFIED_EMAIL;
+
+        // Ensure a users document exists for this authenticated user (create minimal profile with publicId)
+        (async () => {
+          try {
+            // generate a publicId and ensure it's unique (retry a few times if collision)
+            let publicId = generatePublicId();
+            for (let i = 0; i < 4; i++) {
+              const existing = await getDocs(query(collection(db, "users"), where("publicId", "==", publicId)));
+              if (existing.empty) break;
+              publicId = generatePublicId();
+            }
+
+            const docRef = doc(db, "users", user.uid);
+            const initialFans = isCreator ? INITIAL_FANS_COUNT : 0;
+            await setDoc(docRef, {
+              name: myName,
+              email: user.email,
+              photoURL: "",
+              bgPreset: "classic",
+              customBg: "",
+              status: "online",
+              followedIg: isCreator,
+              fansCount: initialFans,
+              banUntil: null,
+              publicId
+            }, { merge: true });
+
+            // reflect publicId into UI
+            const pubIdElFallback = document.getElementById("settingsPublicId");
+            if (pubIdElFallback) pubIdElFallback.value = publicId;
+
+            if (isCreator) {
+              const myFollowersLabel = document.getElementById("myFollowersLabel");
+              myFollowersLabel.innerText = formatFans(INITIAL_FANS_COUNT);
+              myFollowersLabel.style.display = "inline-block";
+            }
+          } catch (err) {
+            console.error("Error creating fallback user doc:", err);
+          }
+        })();
+
+        // Update UI immediately while doc creation runs
         document.getElementById("myProfileName").innerHTML = `<span>${myName}</span>` + (checkIsVerified(user.email, isCreator ? INITIAL_FANS_COUNT : 0) ? verifiedBadgeHtml : "");
         igLockScreen.style.display = isCreator ? "none" : "flex"; // if creator assume followed / skip lock
         document.getElementById("myAvatar").innerText = myName.charAt(0).toUpperCase();
         document.getElementById("myAvatar").style.backgroundImage = "none";
-        if (isCreator) {
-          const myFollowersLabel = document.getElementById("myFollowersLabel");
-          myFollowersLabel.innerText = formatFans(INITIAL_FANS_COUNT);
-          myFollowersLabel.style.display = "inline-block";
-        }
       }
     });
 
