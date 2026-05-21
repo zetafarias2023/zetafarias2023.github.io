@@ -936,6 +936,9 @@ window.selectFriendChat = async (fName, fEmail, isBlocked, avatarUrl) => {
   document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
   document.getElementById(`friend-${btoa(fName)}`)?.classList.add('active');
 
+  // update block button to reflect the selected contact
+  updateBlockButtonUI();
+
   loadPrivateMessages();
   listenRoomMetaAndStatus();
 };
@@ -1159,6 +1162,9 @@ async function saveMessageToFirestore(text, imageUrl) {
       reaction: ""
     };
     await addDoc(collection(db, "messages"), payload);
+
+    // Force a refresh / ensure listener sees the new message immediately (helps with realtime display)
+    try { loadPrivateMessages(); } catch(e) { /* best-effort */ }
 
     // If this is the Z IA Chat room (bot), generate a local bot reply (text-only) after a short delay
     // Use active friend identity for bot detection so replies reliably work
@@ -1602,11 +1608,41 @@ window.saveSettings = async () => {
 window.toggleBlockFriend = async () => {
   if (!currentActiveFriend) return;
   try {
-    const fId = btoa(currentActiveFriend.name); const nState = !currentActiveFriend.blocked;
+    const fId = btoa(currentActiveFriend.name);
+    const nState = !currentActiveFriend.blocked;
     await updateDoc(doc(db, "users", auth.currentUser.uid, "friends", fId), { blocked: nState });
-    currentActiveFriend.blocked = nState; selectFriendChat(currentActiveFriend.name, currentActiveFriend.email, nState);
+    currentActiveFriend.blocked = nState;
+    selectFriendChat(currentActiveFriend.name, currentActiveFriend.email, nState);
+    updateBlockButtonUI();
   } catch (e) { console.error(e); }
 };
+
+// Explicit unblock function (callable from UI or programmatically)
+window.unblockFriend = async () => {
+  if (!currentActiveFriend) return;
+  try {
+    const fId = btoa(currentActiveFriend.name);
+    await updateDoc(doc(db, "users", auth.currentUser.uid, "friends", fId), { blocked: false });
+    currentActiveFriend.blocked = false;
+    selectFriendChat(currentActiveFriend.name, currentActiveFriend.email, false);
+    updateBlockButtonUI();
+  } catch (e) { console.error(e); }
+};
+
+// Update block button label/icon based on currentActiveFriend state
+function updateBlockButtonUI() {
+  try {
+    const btn = document.getElementById("blockBtn");
+    if (!btn) return;
+    if (currentActiveFriend && currentActiveFriend.blocked) {
+      btn.innerText = "🔓"; // unlocked icon to indicate pressing will unblock
+      btn.title = "Desbloquear";
+    } else {
+      btn.innerText = "🚫";
+      btn.title = "Bloquear";
+    }
+  } catch(e) { /* ignore */ }
+}
 
 window.deleteCurrentChat = async () => {
   if (!currentRoomId || !confirm("¿Estás seguro de que querés eliminar todo el historial de este chat? Esta acción no se puede deshacer.")) return;
