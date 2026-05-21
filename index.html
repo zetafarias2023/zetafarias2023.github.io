@@ -1221,24 +1221,38 @@ async function saveMessageToFirestore(text, imageUrl) {
 function renderSingleMessage(m, optimistic = false) {
   try {
     const wrapper = document.createElement("div"); wrapper.classList.add("msg-wrapper");
+    // give wrapper a stable id so optimistic entries can be identified if needed
+    if (m.id) wrapper.id = `msg-${m.id}`;
+
     const div = document.createElement("div"); div.classList.add("msg"); const isMe = m.user === auth.currentUser.email; div.classList.add(isMe ? "me" : "other");
     // for optimistic messages, attach a temporary onclick payload safely
     div.setAttribute("onclick", `openReactionMenu(event, '${m.id}', \`${(m.text||'Archivo').replace(/`/g,'')}\`)`);
+
     const timeStr = (m.createdAt && m.createdAt.toDate) ? m.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (m.createdAt instanceof Date ? m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     let bodyHtml = `<div class="msg-text">${m.text}</div>`;
-    if(m.imageUrl) bodyHtml = `<img src="${m.imageUrl}" class="msg-img" alt="img" />`;
+    if (m.imageUrl) bodyHtml = `<img src="${m.imageUrl}" class="msg-img" alt="img" />`;
+
+    // Build meta UI: if optimistic, show "Enviando..." placeholder; if confirmed and from me show blue ticks
+    let metaHtml = `<span>${timeStr}</span>`;
+    if (isMe) {
+      if (optimistic) metaHtml += ` <span class="ticks" style="color:#d1d5db; font-size:12px; margin-left:6px;">Enviando...</span>`;
+      else metaHtml += ` <span class="ticks blue">✓✓</span>`;
+    }
+
     div.innerHTML = `
       <div class="msg-user"><span>${m.senderName}</span>${checkIsVerified(m.user) ? verifiedBadgeHtml : ""}</div>
       ${bodyHtml}
-      <div class="msg-meta"><span>${timeStr}</span> ${isMe && !optimistic ? '<span class="ticks blue">✓✓</span>':''}</div>
+      <div class="msg-meta">${metaHtml}</div>
       ${m.reaction ? `<div class="reaction-badge">${m.reaction}</div>` : ''}
     `;
+
     if (optimistic) {
       // give it a slight visual hint that it's pending
       div.style.opacity = "0.85";
     }
     wrapper.appendChild(div);
     messagesDiv.appendChild(wrapper);
+    // scroll to bottom (smooth)
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   } catch (e) {
     console.error("renderSingleMessage error", e);
