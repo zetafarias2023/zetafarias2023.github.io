@@ -1,381 +1,208 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Z Chat - Simple Realtime</title>
-  <style>
-    :root{--bg:#071018;--panel:#0f1a20;--muted:#9fb3b0;--accent:#00a884;--card:#0c1720}
-    *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    body{margin:0;background:var(--bg);color:#e9eef0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
-    .app{width:100%;max-width:980px;height:80vh;background:linear-gradient(180deg,#071018, #071826);border-radius:12px;display:flex;overflow:hidden;border:1px solid rgba(255,255,255,0.04)}
-    .sidebar{width:320px;background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:12px;border-right:1px solid rgba(255,255,255,0.03)}
-    .main{flex:1;display:flex;flex-direction:column}
-    .card{background:var(--card);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
-    .center{display:flex;align-items:center;justify-content:center}
-    input,button,select,textarea{font-size:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;outline:none}
-    .muted{color:var(--muted);font-size:13px}
-    .btn{background:var(--accent);color:#08121a;border:none;cursor:pointer}
-    .small{font-size:13px;padding:6px 8px}
-    .friends{overflow:auto;flex:1;display:flex;flex-direction:column;gap:8px}
-    .friend{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer}
-    .friend:hover{background:rgba(255,255,255,0.01)}
-    .msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-    .msg.me{align-self:flex-end;background:#053d2b;color:#dff7ee;padding:8px;border-radius:10px;max-width:70%}
-    .msg.other{align-self:flex-start;background:#11242b;padding:8px;border-radius:10px;max-width:70%}
-    .compose{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,0.03)}
-    .compact{display:flex;gap:8px;align-items:center}
-    .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid rgba(255,255,255,0.03)}
-    .hidden{display:none}
-    @media(max-width:800px){.app{flex-direction:column;height:94vh}.sidebar{width:100%;height:220px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.03)}}
-  </style>
+<meta charset="UTF-8">
+<title>Zona Optis + sensis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0b0f1a;
+  color:white;
+}
+
+header{
+  background:#111827;
+  padding:15px;
+  text-align:center;
+  font-weight:bold;
+}
+
+/* LOGIN */
+#login{
+  display:flex;
+  justify-content:center;
+  margin-top:80px;
+}
+
+.card{
+  background:#1a1a2e;
+  padding:20px;
+  border-radius:12px;
+  text-align:center;
+  width:300px;
+}
+
+input{
+  width:90%;
+  padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:8px;
+}
+
+button{
+  background:#00ff88;
+  border:none;
+  padding:10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  margin-top:10px;
+}
+
+/* APP */
+#app{
+  display:none;
+}
+
+/* TOPBAR */
+.topbar{
+  text-align:center;
+  margin:10px;
+  color:#aaa;
+}
+
+/* SHOP */
+.container{
+  display:flex;
+  gap:10px;
+  padding:10px;
+}
+
+.shop{
+  width:70%;
+}
+
+.cardProd{
+  background:#1a1a2e;
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:12px;
+}
+
+#cart{
+  width:30%;
+  background:#111827;
+  padding:10px;
+  border-radius:12px;
+}
+
+.item{
+  font-size:14px;
+}
+</style>
 </head>
+
 <body>
-  <div class="app" id="app">
-    <div class="sidebar card" id="authPanel">
-      <h3 class="center">Z Chat - Autenticación</h3>
-      <div id="authForms">
-        <div id="registerForm">
-          <input id="regName" placeholder="Nombre público" />
-          <input id="regEmail" placeholder="Email" />
-          <input id="regPass" type="password" placeholder="Contraseña" />
-          <div class="compact">
-            <button class="btn" onclick="register()">Crear cuenta</button>
-            <button class="small" onclick="showLogin()">Ya tengo cuenta</button>
-          </div>
-        </div>
-        <div id="loginForm" class="hidden">
-          <input id="logEmail" placeholder="Email" />
-          <input id="logPass" type="password" placeholder="Contraseña" />
-          <div class="compact">
-            <button class="btn" onclick="login()">Iniciar sesión</button>
-            <button class="small" onclick="showRegister()">Registrarse</button>
-          </div>
-        </div>
-      </div>
-      <hr />
-      <div id="userPanel" class="hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div id="meName" style="font-weight:700"></div>
-            <div id="meId" class="muted"></div>
-          </div>
-          <button class="small" onclick="logout()">Salir</button>
-        </div>
-        <div style="margin-top:8px">
-          <label class="muted">Agregar por ID público</label>
-          <div style="display:flex;gap:8px;margin-top:6px">
-            <input id="addPublicId" placeholder="ID (ej: AB3K9Z)" />
-            <button class="btn small" onclick="addContact()">Agregar</button>
-          </div>
-        </div>
-        <div style="margin-top:8px" class="muted">Contactos</div>
-        <div class="friends card" id="contactsList"></div>
-      </div>
-    </div>
 
-    <div class="main">
-      <div class="topbar card">
-        <div>
-          <strong id="chatToTitle">Seleccioná un contacto</strong>
-          <div id="chatToSubtitle" class="muted">Los mensajes llegan en tiempo real</div>
-        </div>
-        <div id="msgControls" class="hidden compact">
-          <button class="small" onclick="deleteChat()">Borrar</button>
-          <button class="small" id="blockBtn" onclick="toggleBlock()">Bloquear</button>
-        </div>
-      </div>
+<header>🔥 Zona Optis + sensis</header>
 
-      <div style="flex:1;display:flex;flex-direction:column">
-        <div id="messagesArea" class="msgs card">
-          <div id="noSelected" class="center muted">Ningún chat abierto</div>
-        </div>
-
-        <div id="composer" class="compose card hidden">
-          <input id="messageInput" placeholder="Escribí un mensaje..." style="flex:1" oninput="typingIndicator()" />
-          <button class="btn" onclick="sendMsg()">Enviar</button>
-        </div>
-      </div>
-    </div>
+<!-- LOGIN -->
+<div id="login">
+  <div class="card">
+    <h2>🔐 Login</h2>
+    <input id="username" placeholder="Ingresa tu usuario">
+    <button onclick="login()">Entrar</button>
   </div>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+<!-- APP -->
+<div id="app">
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDq6lbgfEKfWHNCNUwWe5JSq2OnP2Tfy3o",
-      authDomain: "ggsgsd-69e39.firebaseapp.com",
-      projectId: "ggsgsd-69e39",
-      storageBucket: "ggsgsd-69e39.firebasestorage.app",
-      messagingSenderId: "585138628517",
-      appId: "1:585138628517:web:60709981b3a54821026a4c"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+<div class="topbar">
+👤 Bienvenido: <span id="user"></span>
+</div>
 
-    // UI refs
-    const authPanel = document.getElementById("authPanel");
-    const authForms = document.getElementById("authForms");
-    const registerForm = document.getElementById("registerForm");
-    const loginForm = document.getElementById("loginForm");
-    const userPanel = document.getElementById("userPanel");
-    const meName = document.getElementById("meName");
-    const meId = document.getElementById("meId");
-    const contactsList = document.getElementById("contactsList");
-    const messagesArea = document.getElementById("messagesArea");
-    const composer = document.getElementById("composer");
-    const messageInput = document.getElementById("messageInput");
-    const chatToTitle = document.getElementById("chatToTitle");
-    const chatToSubtitle = document.getElementById("chatToSubtitle");
-    const noSelected = document.getElementById("noSelected");
-    const msgControls = document.getElementById("msgControls");
-    const blockBtn = document.getElementById("blockBtn");
+<div class="container">
 
-    let currentUserDoc = null;
-    let currentChat = null; // {id, name, email, blocked}
-    let messagesUnsub = null;
-    let typingTimeout = null;
+<div class="shop">
 
-    function generatePublicId(){
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      let s="";
-      for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
-      return s;
-    }
+<div class="cardProd">
+<h3>🚀 Optimización PRO</h3>
+<p>FPS Boost + Lag fix</p>
+<b>$10 USD (ARG)</b>
+<button onclick="add('Optimización PRO',10)">Agregar</button>
+</div>
 
-    // Simple UI toggles
-    window.showLogin = ()=>{ registerForm.classList.add("hidden"); loginForm.classList.remove("hidden"); };
-    window.showRegister = ()=>{ loginForm.classList.add("hidden"); registerForm.classList.remove("hidden"); };
+<div class="cardProd">
+<h3>🎯 Sensibilidad PRO</h3>
+<p>Aim control + precisión</p>
+<b>$5 USD (ARG)</b>
+<button onclick="add('Sensibilidad PRO',5)">Agregar</button>
+</div>
 
-    // Auth actions
-    window.register = async () => {
-      const name = document.getElementById("regName").value.trim();
-      const email = document.getElementById("regEmail").value.trim().toLowerCase();
-      const pass = document.getElementById("regPass").value;
-      if(!name||!email||!pass) return alert("Completa todos los campos.");
-      try{
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(cred.user, { displayName: name });
-        // create user doc
-        const publicId = generatePublicId();
-        await setDoc(doc(db, "users", cred.user.uid), {
-          name, email, publicId, photoURL:"", fansCount:0, status:"online", banUntil:null
-        });
-        alert("Cuenta creada. ID público: " + publicId);
-      }catch(e){ alert(e.message||"Error al registrar"); }
-    };
+</div>
 
-    window.login = async () => {
-      const email = document.getElementById("logEmail").value.trim().toLowerCase();
-      const pass = document.getElementById("logPass").value;
-      if(!email||!pass) return alert("Completa ambos campos.");
-      try{ await signInWithEmailAndPassword(auth, email, pass); } catch(e){ alert("Credenciales inválidas"); }
-    };
+<div id="cart">
+<h3>🛒 Carrito</h3>
+<div id="items"></div>
+<hr>
+Total: $<span id="total">0</span>
+<br><br>
+<button onclick="buy()">Comprar → Discord</button>
+</div>
 
-    window.logout = async () => {
-      if(auth.currentUser){
-        // set offline
-        const q = await getDoc(doc(db,"users",auth.currentUser.uid));
-        if(q.exists()) await updateDoc(doc(db,"users",auth.currentUser.uid),{status:"offline"});
-      }
-      await signOut(auth);
-      location.reload();
-    };
+</div>
 
-    // Add contact by publicId
-    window.addContact = async () => {
-      const id = document.getElementById("addPublicId").value.trim().toUpperCase();
-      if(!id) return alert("Ingresá un ID.");
-      try{
-        const q = query(collection(db,"users"), where("publicId","==",id));
-        const snap = await getDocs(q);
-        if(snap.empty) return alert("No se encontró usuario.");
-        const target = snap.docs[0].data();
-        // save under current user's subcollection "friends"
-        await setDoc(doc(db,"users",auth.currentUser.uid,"friends", btoa(target.email)), {
-          name: target.name, email: target.email, addedAt: serverTimestamp(), blocked:false
-        });
-        document.getElementById("addPublicId").value="";
-        alert("Contacto agregado: " + target.name);
-      }catch(e){ console.error(e); alert("Error al agregar"); }
-    };
+</div>
 
-    // Select chat
-    async function selectChat(friend){
-      currentChat = friend;
-      chatToTitle.innerText = friend.name;
-      msgControls.classList.remove("hidden");
-      composer.classList.remove("hidden");
-      noSelected.classList.add("hidden");
-      messagesArea.innerHTML = "";
-      updateBlockUI();
-      // create deterministic room id by sorting names
-      const names = [auth.currentUser.displayName || auth.currentUser.email, friend.name].sort();
-      const roomId = `room_${names[0]}_${names[1]}`;
-      // listen messages realtime
-      if(messagesUnsub) messagesUnsub();
-      const q = query(collection(db,"messages"), where("roomId","==",roomId), orderBy("createdAt","asc"));
-      messagesUnsub = onSnapshot(q, snap => {
-        messagesArea.innerHTML="";
-        snap.forEach(docSnap=>{
-          const m = docSnap.data();
-          const div = document.createElement("div");
-          div.className = "msg " + (m.user===auth.currentUser.email ? "me":"other");
-          div.innerText = m.text || "[imagen]";
-          messagesArea.appendChild(div);
-        });
-        messagesArea.scrollTop = messagesArea.scrollHeight;
-      });
-      // ensure room meta exists
-      await setDoc(doc(db,"rooms",roomId), { updatedAt: serverTimestamp() }, { merge:true });
-      // save current room on object for sending
-      currentChat.roomId = roomId;
-      // restore draft if any
-      const rdoc = await getDoc(doc(db,"rooms",roomId));
-      if(rdoc.exists()){
-        const drafts = rdoc.data().lastDrafts || {};
-        const myDraft = drafts[auth.currentUser.email] || "";
-        if(myDraft) { messageInput.value = myDraft; }
-      }
-    }
+<script>
+let cart=[];
+let total=0;
+let user="";
 
-    // Send message
-    window.sendMsg = async () => {
-      const txt = messageInput.value.trim();
-      if(!currentChat || !currentChat.roomId) return alert("Seleccioná un chat primero.");
-      if(!txt) return;
-      // simple content check
-      const blackList = ["porno","porn","xnxx","hentai","desnudo","tetas","coger"];
-      if(blackList.some(w=>txt.toLowerCase().includes(w))){
-        // ban user for 10 minutes
-        const until = new Date(Date.now() + 10*60*1000);
-        await updateDoc(doc(db,"users",auth.currentUser.uid), { banUntil: until });
-        alert("Contenido no permitido. Has sido baneado temporalmente.");
-        return;
-      }
-      try{
-        await addDoc(collection(db,"messages"), {
-          text: txt, user: auth.currentUser.email, senderName: auth.currentUser.displayName||"", roomId: currentChat.roomId, createdAt: serverTimestamp()
-        });
-        // clear input and save draft empty
-        messageInput.value = "";
-        await setDoc(doc(db,"rooms",currentChat.roomId), { lastDrafts: { [auth.currentUser.email]:"" } }, { merge:true });
-      }catch(e){ console.error(e); alert("No se pudo enviar"); }
-    };
+/* LOGIN */
+function login(){
+  const u = document.getElementById("username").value;
+  if(!u) return;
 
-    // Typing indicator: store in rooms.typingUser
-    window.typingIndicator = async () => {
-      if(!currentChat || !currentChat.roomId) return;
-      await setDoc(doc(db,"rooms",currentChat.roomId), { typingUser: auth.currentUser.displayName }, { merge:true });
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(async ()=> {
-        if(currentChat && currentChat.roomId) await setDoc(doc(db,"rooms",currentChat.roomId), { typingUser: "" }, { merge:true });
-      }, 1300);
-      // save draft locally to room
-      await setDoc(doc(db,"rooms",currentChat.roomId), { lastDrafts: { [auth.currentUser.email]: messageInput.value } }, { merge:true });
-    };
+  user = u;
 
-    // Delete chat messages (bulk delete simple approach)
-    window.deleteChat = async () => {
-      if(!currentChat || !currentChat.roomId) return;
-      if(!confirm("Eliminar todo el historial de este chat?")) return;
-      // fetch messages and delete (best-effort)
-      const q = query(collection(db,"messages"), where("roomId","==",currentChat.roomId));
-      const snap = await getDocs(q);
-      const deletes = [];
-      snap.forEach(d=> deletes.push(deleteDoc(doc(db,"messages",d.id))));
-      await Promise.all(deletes);
-      // clear UI
-      messagesArea.innerHTML="";
-      alert("Historial eliminado.");
-    };
+  localStorage.setItem("user",user);
 
-    // Block/unblock friend (updates friend record)
-    window.toggleBlock = async () => {
-      if(!currentChat) return;
-      const fid = btoa(currentChat.email);
-      const fRef = doc(db,"users",auth.currentUser.uid,"friends",fid);
-      const fd = await getDoc(fRef);
-      const newState = !(fd.exists() && fd.data().blocked);
-      await setDoc(fRef, { blocked: newState, name: currentChat.name, email: currentChat.email }, { merge:true });
-      currentChat.blocked = newState;
-      updateBlockUI();
-    };
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="block";
 
-    function updateBlockUI(){
-      const blocked = !!currentChat && !!currentChat.blocked;
-      blockBtn.innerText = blocked ? "Desbloquear" : "Bloquear";
-      if(blocked){ composer.classList.add("hidden"); chatToSubtitle.innerText = "Usuario bloqueado"; } else { composer.classList.remove("hidden"); chatToSubtitle.innerText = "En línea (tiempo real)"; }
-    }
+  document.getElementById("user").innerText=user;
+}
 
-    // Load friends list realtime
-    function loadContacts(){
-      const col = collection(db,"users",auth.currentUser.uid,"friends");
-      onSnapshot(col, async snap=>{
-        contactsList.innerHTML="";
-        if(snap.empty){ contactsList.innerHTML = '<div class="muted">Sin contactos</div>'; return; }
-        // get global users map for enrichment
-        const allUsers = await getDocs(collection(db,"users"));
-        const map = {};
-        allUsers.forEach(d=> map[d.data().email] = d.data());
-        snap.forEach(docu=>{
-          const f = docu.data();
-          const div = document.createElement("div");
-          div.className = "friend";
-          div.innerHTML = `<div style="width:36px;height:36px;border-radius:8px;background:#092126;display:flex;align-items:center;justify-content:center;font-weight:700">${(f.name||'U').charAt(0).toUpperCase()}</div>
-                           <div style="flex:1"><div style="font-weight:600">${f.name}</div><div class="muted" style="font-size:12px">${map[f.email]?.fansCount? map[f.email].fansCount + ' seguidores': ''}</div></div>
-                           <div style="display:flex;flex-direction:column;gap:6px"><button class="small" onclick="event.stopPropagation(); selectChat({name:${JSON.stringify(f.name)},email:${JSON.stringify(f.email)},blocked:${!!f.blocked}})">Chatear</button></div>`;
-          div.addEventListener("click", ()=> selectChat({name:f.name,email:f.email,blocked:!!f.blocked}));
-          contactsList.appendChild(div);
-        });
-      });
-    }
+/* AUTO LOGIN */
+window.onload = ()=>{
+  const saved = localStorage.getItem("user");
 
-    // Auth state
-    onAuthStateChanged(auth, async user=>{
-      if(user){
-        // hide auth forms show user panel
-        registerForm.classList.add("hidden");
-        loginForm.classList.add("hidden");
-        authForms.classList.add("hidden");
-        userPanel.classList.remove("hidden");
-        // ensure user doc exists
-        const udoc = await getDoc(doc(db,"users",user.uid));
-        if(!udoc.exists()){
-          const publicId = generatePublicId();
-          await setDoc(doc(db,"users",user.uid), {
-            name: user.displayName || user.email.split("@")[0],
-            email: user.email, publicId, photoURL:"", fansCount:0, status:"online", banUntil:null
-          });
-        } else {
-          // update online status
-          await updateDoc(doc(db,"users",user.uid), { status:"online" }).catch(()=>{});
-        }
-        // load UI details
-        const udocRef = await getDoc(doc(db,"users",user.uid));
-        currentUserDoc = udocRef.data();
-        meName.innerText = user.displayName || currentUserDoc.name || user.email.split("@")[0];
-        meId.innerText = "ID: " + (currentUserDoc.publicId || "");
-        loadContacts();
-      } else {
-        // show auth forms
-        authForms.classList.remove("hidden");
-        registerForm.classList.remove("hidden");
-        loginForm.classList.add("hidden");
-        userPanel.classList.add("hidden");
-      }
-    });
+  if(saved){
+    user = saved;
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("user").innerText=user;
+  }
+};
 
-    // Before unload save draft
-    window.addEventListener("beforeunload", async () => {
-      if(currentChat && currentChat.roomId && auth.currentUser){
-        await setDoc(doc(db,"rooms",currentChat.roomId), { lastDrafts: { [auth.currentUser.email]: messageInput.value||"" } }, { merge:true });
-      }
-    });
+/* CART */
+function add(name,price){
+  cart.push({name,price});
+  total+=price;
+  render();
+}
 
-  </script>
+function render(){
+  let html="";
+  cart.forEach(i=>{
+    html+=`<div class="item">• ${i.name} - $${i.price}</div>`;
+  });
+
+  document.getElementById("items").innerHTML=html;
+  document.getElementById("total").innerText=total;
+}
+
+/* BUY */
+function buy(){
+  window.open("https://discord.gg/GuyjHVrwnX","_blank");
+}
+</script>
+
 </body>
 </html>
