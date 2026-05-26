@@ -1,207 +1,1051 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
 <meta charset="UTF-8">
-<title>Zona Optis + sensis</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Generador IA 166</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#0b0f1a;
-  color:white;
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
-header{
-  background:#111827;
-  padding:15px;
-  text-align:center;
-  font-weight:bold;
+body{
+font-family:'Orbitron',sans-serif;
+background:#020202;
+overflow:hidden;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+}
+
+/* MATRIX */
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:-2;
+}
+
+.bg{
+position:absolute;
+width:700px;
+height:700px;
+background:#00ff88;
+filter:blur(200px);
+opacity:0.08;
+z-index:-1;
 }
 
 /* LOGIN */
-#login{
-  display:flex;
-  justify-content:center;
-  margin-top:80px;
+
+.login-screen{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+background:rgba(0,0,0,0.88);
+z-index:100;
 }
 
-.card{
-  background:#1a1a2e;
-  padding:20px;
-  border-radius:12px;
-  text-align:center;
-  width:300px;
+.login-box{
+width:360px;
+padding:30px;
+border-radius:26px;
+
+background:
+linear-gradient(
+180deg,
+rgba(0,0,0,0.88),
+rgba(0,0,0,0.95)
+);
+
+border:1px solid rgba(0,255,136,0.2);
+
+backdrop-filter:blur(16px);
+
+box-shadow:
+0 0 30px rgba(0,255,136,0.15);
 }
+
+.login-title{
+text-align:center;
+font-size:30px;
+margin-bottom:25px;
+text-shadow:0 0 18px #00ff88;
+}
+
+/* INPUT */
 
 input{
-  width:90%;
-  padding:10px;
-  margin-top:10px;
-  border:none;
-  border-radius:8px;
+width:100%;
+padding:14px;
+margin-bottom:14px;
+border:none;
+outline:none;
+border-radius:14px;
+
+background:#050505;
+
+border:1px solid rgba(0,255,136,0.18);
+
+color:#00ff88;
+
+font-family:'Orbitron',sans-serif;
+font-size:13px;
 }
 
+input:focus{
+border-color:#00ff88;
+box-shadow:0 0 14px #00ff88;
+}
+
+/* BUTTONS */
+
 button{
-  background:#00ff88;
-  border:none;
-  padding:10px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-  margin-top:10px;
+width:100%;
+padding:14px;
+margin-top:10px;
+border:none;
+border-radius:14px;
+cursor:pointer;
+font-weight:700;
+font-family:'Orbitron',sans-serif;
+transition:0.3s;
+letter-spacing:1px;
+font-size:13px;
+}
+
+button:hover{
+transform:scale(1.02);
+}
+
+.btn-green{
+background:linear-gradient(90deg,#00ff88,#00ffaa);
+color:black;
+}
+
+.btn-dark{
+background:#101010;
+border:1px solid #00ff88;
+color:#00ff88;
+}
+
+.btn-red{
+background:#1a0000;
+border:1px solid red;
+color:#ff5555;
+}
+
+.btn-tiktok{
+background:linear-gradient(90deg,#ff0050,#00f2ea);
+color:white;
 }
 
 /* APP */
-#app{
-  display:none;
+
+.app{
+display:none;
 }
 
-/* TOPBAR */
-.topbar{
-  text-align:center;
-  margin:10px;
-  color:#aaa;
+/* PANEL */
+
+.panel{
+
+position:relative;
+
+width:1000px;
+height:700px;
+
+padding:25px;
+
+border-radius:28px;
+
+background:
+linear-gradient(
+180deg,
+rgba(0,0,0,0.78),
+rgba(0,0,0,0.92)
+);
+
+border:1px solid rgba(0,255,136,0.18);
+
+backdrop-filter:blur(18px);
+
+overflow:hidden;
+
+transition:0.4s;
+
+box-shadow:
+0 0 25px rgba(0,255,136,0.15),
+0 0 80px rgba(0,255,136,0.06);
+
 }
 
-/* SHOP */
-.container{
-  display:flex;
-  gap:10px;
-  padding:10px;
+.mobile{
+width:400px !important;
+height:405px !important;
+border-radius:35px;
 }
 
-.shop{
-  width:70%;
+/* TEXT */
+
+.logo{
+text-align:center;
+font-size:42px;
+margin-bottom:8px;
+text-shadow:0 0 15px #00ff88;
 }
 
-.cardProd{
-  background:#1a1a2e;
-  padding:15px;
-  margin-bottom:10px;
-  border-radius:12px;
+.sub{
+text-align:center;
+font-size:11px;
+opacity:0.7;
+margin-bottom:15px;
+letter-spacing:3px;
 }
 
-#cart{
-  width:30%;
-  background:#111827;
-  padding:10px;
-  border-radius:12px;
+.user{
+margin-bottom:18px;
+text-align:center;
+font-size:13px;
+opacity:0.8;
 }
 
-.item{
-  font-size:14px;
+/* MODES */
+
+.mode-select{
+display:flex;
+gap:12px;
+margin-bottom:18px;
 }
+
+.mode-btn{
+flex:1;
+padding:15px;
+background:#101010;
+border:1px solid rgba(0,255,136,0.18);
+border-radius:15px;
+color:#00ff88;
+cursor:pointer;
+text-align:center;
+transition:0.3s;
+font-size:13px;
+}
+
+.mode-btn.active{
+background:#00ff88;
+color:black;
+box-shadow:0 0 18px #00ff88;
+}
+
+/* MOBILE SLIDER */
+
+.mobile-slider{
+
+margin-top:15px;
+
+padding:14px;
+
+border-radius:18px;
+
+background:rgba(255,255,255,0.03);
+
+border:1px solid rgba(0,255,136,0.12);
+
+}
+
+.slider-text{
+
+font-size:12px;
+
+margin-bottom:10px;
+
+color:#00ff88;
+
+opacity:0.8;
+
+letter-spacing:2px;
+
+}
+
+#mobileRange{
+
+width:100%;
+
+cursor:pointer;
+
+accent-color:#00ff88;
+
+}
+
+/* CHAT */
+
+.chat-box{
+
+position:fixed;
+
+right:25px;
+bottom:25px;
+
+width:340px;
+height:520px;
+
+background:
+linear-gradient(
+180deg,
+rgba(8,8,8,0.98),
+rgba(0,0,0,0.96)
+);
+
+border:1px solid rgba(0,255,136,0.2);
+
+border-radius:26px;
+
+overflow:hidden;
+
+display:flex;
+flex-direction:column;
+
+box-shadow:
+0 0 30px rgba(0,255,136,0.15);
+
+z-index:999;
+
+resize:both;
+
+}
+
+.chat-hidden{
+display:none;
+}
+
+.chat-header{
+
+padding:14px 18px;
+
+background:
+linear-gradient(
+90deg,
+#00ff88,
+#00ffaa
+);
+
+color:black;
+
+font-weight:900;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+cursor:move;
+
+user-select:none;
+
+}
+
+.close-chat{
+cursor:pointer;
+font-size:18px;
+font-weight:bold;
+}
+
+.chat-messages{
+
+flex:1;
+
+padding:14px;
+
+overflow:auto;
+
+font-size:13px;
+
+line-height:1.7;
+
+}
+
+.chat-message{
+
+margin-bottom:14px;
+
+padding:12px 14px;
+
+border-radius:15px;
+
+animation:fade 0.2s ease;
+
+}
+
+.ai{
+background:#071b12;
+border:1px solid rgba(0,255,136,0.18);
+}
+
+.user-msg{
+background:#111;
+border:1px solid rgba(255,255,255,0.08);
+}
+
+.chat-input{
+
+padding:12px;
+
+display:flex;
+
+gap:8px;
+
+background:rgba(255,255,255,0.02);
+
+}
+
+.chat-input input{
+margin:0;
+height:45px;
+font-size:13px;
+}
+
+.chat-input button{
+margin:0;
+width:90px;
+height:45px;
+font-size:12px;
+}
+
+.footer{
+margin-top:15px;
+text-align:center;
+font-size:11px;
+opacity:0.5;
+letter-spacing:3px;
+}
+
+::-webkit-scrollbar{
+width:6px;
+}
+
+::-webkit-scrollbar-thumb{
+background:#00ff88;
+border-radius:20px;
+}
+
+@keyframes fade{
+
+from{
+opacity:0;
+transform:translateY(10px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+
+}
+
 </style>
 </head>
 
 <body>
 
-<header>🔥 Zona Optis + sensis</header>
+<canvas id="matrix"></canvas>
+
+<div class="bg"></div>
 
 <!-- LOGIN -->
-<div id="login">
-  <div class="card">
-    <h2>🔐 Login</h2>
-    <input id="username" placeholder="Ingresa tu usuario">
-    <button onclick="login()">Entrar</button>
-  </div>
+
+<div class="login-screen" id="loginScreen">
+
+<div class="login-box">
+
+<div class="login-title">
+⚡ GENERADOR IA 166
+</div>
+
+<input type="email" id="email" placeholder="Correo">
+
+<input type="password" id="password" placeholder="Contraseña">
+
+<button class="btn-green" onclick="register()">
+CREAR USUARIO
+</button>
+
+<button class="btn-dark" onclick="login()">
+INICIAR SESIÓN
+</button>
+
+</div>
+
 </div>
 
 <!-- APP -->
-<div id="app">
 
-<div class="topbar">
-👤 Bienvenido: <span id="user"></span>
+<div class="app" id="app">
+
+<div class="panel" id="panel">
+
+<div class="logo">
+🤖 GENERADOR IA 166
 </div>
 
-<div class="container">
-
-<div class="shop">
-
-<div class="cardProd">
-<h3>🚀 Optimización PRO</h3>
-<p>FPS Boost + Lag fix</p>
-<b>$10 USD (ARG)</b>
-<button onclick="add('Optimización PRO',10)">Agregar</button>
+<div class="sub">
+FREE FIRE AI CHAT SYSTEM
 </div>
 
-<div class="cardProd">
-<h3>🎯 Sensibilidad PRO</h3>
-<p>Aim control + precisión</p>
-<b>$5 USD (ARG)</b>
-<button onclick="add('Sensibilidad PRO',5)">Agregar</button>
+<div class="user" id="userInfo">
+NO USER
+</div>
+
+<!-- MODES -->
+
+<div class="mode-select">
+
+<div class="mode-btn active"
+onclick="setMode('pc')"
+id="pcBtn">
+
+💻 PC MODE
+
+</div>
+
+<div class="mode-btn"
+onclick="setMode('mobile')"
+id="mobileBtn">
+
+📱 MOBILE MODE
+
+</div>
+
+</div>
+
+<!-- SLIDER -->
+
+<div class="mobile-slider">
+
+<div class="slider-text">
+📱 TAMAÑO MOVIL
+</div>
+
+<input
+type="range"
+min="350"
+max="500"
+value="400"
+id="mobileRange"
+oninput="changeMobileSize(this.value)">
+
+</div>
+
+<button class="btn-green"
+onclick="toggleChat()">
+
+💬 ABRIR / CERRAR CHAT IA
+
+</button>
+
+<button class="btn-dark"
+onclick="window.open('https://discord.gg/XWqHJMrjtn')">
+
+💬 ENTRAR AL DISCORD
+
+</button>
+
+<button class="btn-tiktok"
+onclick="window.open('https://www.tiktok.com/@zeta166_1')">
+
+🎵 @zeta166_1
+
+</button>
+
+<button class="btn-red"
+onclick="logout()">
+
+🚪 CERRAR SESIÓN
+
+</button>
+
+<div class="footer">
+GENERADOR IA 166 x FIREBASE
 </div>
 
 </div>
 
-<div id="cart">
-<h3>🛒 Carrito</h3>
-<div id="items"></div>
-<hr>
-Total: $<span id="total">0</span>
+</div>
+
+<!-- CHAT -->
+
+<div class="chat-box chat-hidden"
+id="chatBox">
+
+<div class="chat-header">
+
+🤖 IA CHAT
+
+<div class="close-chat"
+onclick="toggleChat()">
+
+✖
+
+</div>
+
+</div>
+
+<div class="chat-messages"
+id="chatMessages">
+
+<div class="chat-message ai">
+
+🤖 Hola gamer.
+
 <br><br>
-<button onclick="buy()">Comprar → Discord</button>
-</div>
+
+📱 Dime tu dispositivo y DPI.
+
+<br><br>
+
+Ejemplo:
+
+<br><br>
+
+Redmi Note 12 DPI 600
 
 </div>
 
 </div>
 
-<script>
-let cart=[];
-let total=0;
-let user="";
+<div class="chat-input">
 
-/* LOGIN */
-function login(){
-  const u = document.getElementById("username").value;
-  if(!u) return;
+<input type="text"
+id="chatInput"
+placeholder="Dispositivo + DPI">
 
-  user = u;
+<button class="btn-green"
+onclick="sendMessage()">
 
-  localStorage.setItem("user",user);
+ENVIAR
 
-  document.getElementById("login").style.display="none";
-  document.getElementById("app").style.display="block";
+</button>
 
-  document.getElementById("user").innerText=user;
-}
+</div>
 
-/* AUTO LOGIN */
-window.onload = ()=>{
-  const saved = localStorage.getItem("user");
+</div>
 
-  if(saved){
-    user = saved;
-    document.getElementById("login").style.display="none";
-    document.getElementById("app").style.display="block";
-    document.getElementById("user").innerText=user;
-  }
+<!-- FIREBASE -->
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyBmb479LPMp_0CM5gpDj6mFzDAEoBGkOg8",
+
+authDomain: "zetachat-666a5.firebaseapp.com",
+
+databaseURL: "https://zetachat-666a5-default-rtdb.firebaseio.com",
+
+projectId: "zetachat-666a5",
+
+storageBucket: "zetachat-666a5.firebasestorage.app",
+
+messagingSenderId: "772092262393",
+
+appId: "1:772092262393:web:348d75695a45081c94ef28",
+
+measurementId: "G-K5RYX4KTTF"
+
 };
 
-/* CART */
-function add(name,price){
-  cart.push({name,price});
-  total+=price;
-  render();
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+window.register = async ()=>{
+
+const email=document.getElementById("email").value;
+const password=document.getElementById("password").value;
+
+try{
+
+await createUserWithEmailAndPassword(auth,email,password);
+
+alert("USUARIO CREADO");
+
+}catch(err){
+
+alert(err.message);
+
 }
 
-function render(){
-  let html="";
-  cart.forEach(i=>{
-    html+=`<div class="item">• ${i.name} - $${i.price}</div>`;
-  });
-
-  document.getElementById("items").innerHTML=html;
-  document.getElementById("total").innerText=total;
 }
 
-/* BUY */
-function buy(){
-  window.open("https://discord.gg/GuyjHVrwnX","_blank");
+window.login = async ()=>{
+
+const email=document.getElementById("email").value;
+const password=document.getElementById("password").value;
+
+try{
+
+await signInWithEmailAndPassword(auth,email,password);
+
+}catch(err){
+
+alert(err.message);
+
 }
+
+}
+
+window.logout = async ()=>{
+
+await signOut(auth);
+
+}
+
+onAuthStateChanged(auth,(user)=>{
+
+if(user){
+
+document.getElementById("loginScreen").style.display="none";
+
+document.getElementById("app").style.display="block";
+
+document.getElementById("userInfo").innerText=
+"👤 "+user.email;
+
+window.open(
+"https://discord.gg/XWqHJMrjtn",
+"_blank"
+);
+
+}else{
+
+document.getElementById("loginScreen").style.display="flex";
+
+document.getElementById("app").style.display="none";
+
+}
+
+});
+
+</script>
+
+<!-- APP -->
+
+<script>
+
+/* MATRIX */
+
+const canvas=document.getElementById("matrix");
+
+const ctx=canvas.getContext("2d");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+const letters="01AI166PRO".split("");
+
+const fontSize=14;
+
+const columns=canvas.width/fontSize;
+
+const drops=[];
+
+for(let i=0;i<columns;i++){
+drops[i]=1;
+}
+
+function draw(){
+
+ctx.fillStyle="rgba(0,0,0,0.08)";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ctx.fillStyle="#00ff88";
+
+ctx.font=fontSize+"px monospace";
+
+for(let i=0;i<drops.length;i++){
+
+const text=letters[Math.floor(Math.random()*letters.length)];
+
+ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+if(drops[i]*fontSize>canvas.height && Math.random()>0.975){
+
+drops[i]=0;
+
+}
+
+drops[i]++;
+
+}
+
+}
+
+setInterval(draw,35);
+
+/* MODES */
+
+function setMode(mode){
+
+const panel=document.getElementById("panel");
+
+document.getElementById("pcBtn")
+.classList.remove("active");
+
+document.getElementById("mobileBtn")
+.classList.remove("active");
+
+if(mode==="pc"){
+
+panel.classList.remove("mobile");
+
+panel.style.width="1000px";
+panel.style.height="700px";
+
+document.getElementById("pcBtn")
+.classList.add("active");
+
+}else{
+
+panel.classList.add("mobile");
+
+document.getElementById("mobileBtn")
+.classList.add("active");
+
+}
+
+}
+
+/* MOBILE SLIDER */
+
+function changeMobileSize(value){
+
+const panel=document.getElementById("panel");
+
+if(panel.classList.contains("mobile")){
+
+panel.style.width=value+"px";
+
+panel.style.height=
+(parseInt(value)+5)+"px";
+
+}
+
+}
+
+/* CHAT */
+
+function toggleChat(){
+
+document.getElementById("chatBox")
+.classList.toggle("chat-hidden");
+
+}
+
+function random(min,max){
+
+return Math.floor(Math.random()*(max-min+1))+min;
+
+}
+
+function generateSensi(device,dpi){
+
+let hash=0;
+
+for(let i=0;i<device.length;i++){
+
+hash+=device.charCodeAt(i);
+
+}
+
+let base=150+(hash%30);
+
+let dpiBoost=Math.floor(dpi/40);
+
+return `
+
+🤖 IA ANALYSIS COMPLETE
+
+📱 DEVICE:
+${device}
+
+📡 DPI:
+${dpi}
+
+━━━━━━━━━━━━━━━━━━
+
+🎯 GENERAL → ${base+dpiBoost}
+
+🔴 RED DOT → ${base-5+dpiBoost}
+
+🔭 2X SCOPE → ${base-10+dpiBoost}
+
+🎯 4X SCOPE → ${base-15+dpiBoost}
+
+🎯 SNIPER → ${base-20+dpiBoost}
+
+━━━━━━━━━━━━━━━━━━
+
+⚡ FPS BOOST → ${random(60,120)} FPS
+
+📡 PING → ${random(10,40)}ms
+
+🔥 HEADSHOT OPTIMIZED
+
+`;
+
+}
+
+function sendMessage(){
+
+const input=document.getElementById("chatInput");
+
+const msg=input.value.trim();
+
+if(msg==="") return;
+
+const chat=document.getElementById("chatMessages");
+
+chat.innerHTML+=`
+
+<div class="chat-message user-msg">
+
+🧑 ${msg}
+
+</div>
+
+`;
+
+let response="";
+
+const dpiMatch=msg.match(/\d+/);
+
+const dpi=dpiMatch ? parseInt(dpiMatch[0]) : 0;
+
+if(dpi>0){
+
+response=generateSensi(msg,dpi);
+
+}else{
+
+response=`
+
+🤖 Necesito:
+
+📱 Tu dispositivo
+📡 Tu DPI
+
+Ejemplo:
+
+Redmi Note 12 DPI 600
+
+`;
+
+}
+
+setTimeout(()=>{
+
+chat.innerHTML+=`
+
+<div class="chat-message ai">
+
+${response}
+
+</div>
+
+`;
+
+chat.scrollTop=chat.scrollHeight;
+
+},400);
+
+input.value="";
+
+}
+
+/* ENTER */
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+const input=document.getElementById("chatInput");
+
+input.addEventListener("keypress",(e)=>{
+
+if(e.key==="Enter"){
+
+sendMessage();
+
+}
+
+});
+
+});
+
+/* DRAG CHAT */
+
+const chatBox=document.getElementById("chatBox");
+
+document.addEventListener("mousedown",(e)=>{
+
+if(!e.target.closest(".chat-header")) return;
+
+const shiftX=e.clientX-chatBox.getBoundingClientRect().left;
+
+const shiftY=e.clientY-chatBox.getBoundingClientRect().top;
+
+function moveAt(pageX,pageY){
+
+chatBox.style.left=pageX-shiftX+"px";
+
+chatBox.style.top=pageY-shiftY+"px";
+
+chatBox.style.right="auto";
+
+chatBox.style.bottom="auto";
+
+}
+
+function onMouseMove(e){
+
+moveAt(e.pageX,e.pageY);
+
+}
+
+document.addEventListener("mousemove",onMouseMove);
+
+document.addEventListener("mouseup",()=>{
+
+document.removeEventListener("mousemove",onMouseMove);
+
+},{once:true});
+
+});
+
 </script>
 
 </body>
