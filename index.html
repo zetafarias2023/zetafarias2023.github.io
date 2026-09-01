@@ -229,6 +229,7 @@
             font-size: 0.75rem;
             cursor: pointer;
             border: none;
+            display: inline-block;
         }
 
         .file-input { display: none; }
@@ -648,15 +649,10 @@
         <div class="view-content active" id="tab-local">
             <div class="upload-section">
                 <span style="font-size: 0.75rem; color: #b3b3b3;">Música de tu Dispositivo</span>
-                <div style="display: flex; gap: 6px;">
-                    <button class="upload-btn" id="btn-scan-folder" title="Selecciona la carpeta de Música o Downloads de tu Celular">
-                        📂 Escanear Carpeta
-                    </button>
-                    <label class="upload-btn">
-                        + Subir
-                        <input type="file" class="file-input" id="file-input-local" accept="audio/*" multiple webkitdirectory>
-                    </label>
-                </div>
+                <label class="upload-btn">
+                    📂 Cargar Canciones
+                    <input type="file" class="file-input" id="file-input-local" accept="audio/*" multiple>
+                </label>
             </div>
             <div class="playlist-list" id="local-playlist"></div>
         </div>
@@ -973,30 +969,7 @@
             renderPlaylist('zeta-playlist', zetaSongsList, currentUser.toLowerCase() === 'zeta166', STORE_ZETA);
         }
 
-        /* Escaneo de Carpeta Completa (Android/Navegador) */
-        document.getElementById('btn-scan-folder').addEventListener('click', async () => {
-            if ('showDirectoryPicker' in window) {
-                try {
-                    const dirHandle = await window.showDirectoryPicker();
-                    for await (const entry of dirHandle.values()) {
-                        if (entry.kind === 'file') {
-                            const file = await entry.getFile();
-                            if (file.type.startsWith('audio/') || file.name.match(/\.(mp3|wav|m4a|aac)$/i)) {
-                                const cleanName = file.name.replace(/\.[^/.]+$/, "");
-                                await saveLocalSong(cleanName, file, currentUser);
-                            }
-                        }
-                    }
-                    await loadAllData();
-                } catch (err) {
-                    console.log('Permiso cancelado o no soportado.', err);
-                }
-            } else {
-                // Fallback para navegadores móviles convencionales
-                document.getElementById('file-input-local').click();
-            }
-        });
-
+        /* Selección de Canciones para Android / Web */
         document.getElementById('file-input-local').addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             for (const file of files) {
@@ -1026,7 +999,7 @@
             container.innerHTML = '';
 
             if (list.length === 0) {
-                container.innerHTML = '<div class="empty-state">No hay canciones cargadas aún. Usa "Escanear Carpeta" para cargar tus canciones de Android.</div>';
+                container.innerHTML = '<div class="empty-state">No hay canciones cargadas aún. Usa "Cargar Canciones" para agregar tu música.</div>';
                 return;
             }
 
